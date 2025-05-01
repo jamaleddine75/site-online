@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Page d'entrée examen</title>
+  <link rel="stylesheet" href="pasg-lien.css">
+</head>
+<body>
+  <section class="hero">
+  <img src="1.png" alt="Illustration examen" />
+
+  <h1>Entrez le lien ou le code de l’examen</h1>
+  <p>Vous pouvez copier/coller le lien ou saisir le code fourni par votre enseignant.</p>
+
+  <input id="examLink" type="text" placeholder="https://… ou CODE1234" />
+  
+  <!-- Button Container (for alignment) -->
+  <div class="button-container">
+    <button type="button" class="btn" id="startBtn" onclick="window.location.href='/exam_t'">Démarrer l’examen</button>
+    <button type="button" class="btn" id="returnBtn" onclick="window.location.href='home'">Return Home</button>
+  </div>
+
+  <p id="errorMsg"></p>
+</section>
+
+  <script>
+    const btn = document.getElementById('startBtn');
+    const input = document.getElementById('examLink');
+    const errorMsg = document.getElementById('errorMsg');
+
+    btn.addEventListener('click', () => {
+      const link = input.value.trim();
+      errorMsg.textContent = '';
+
+      if (!link) {
+        errorMsg.textContent = 'يرجى إدخال الرابط أو الكود أولاً.';
+        return;
+      }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            // إرسال الإحداثيات للخادم لو احتجت:
+            // pos.coords.latitude , pos.coords.longitude
+            // ثم إعادة التوجيه:
+            window.location.href = link;
+          },
+          err => {
+            errorMsg.textContent =  'Lemplacement na pas pu être trouvé ; Essayer à nouveau.';
+          }
+        );
+      } else {
+        window.location.href = link;
+      }
+    });
+  </script>
+</body>
+</html>

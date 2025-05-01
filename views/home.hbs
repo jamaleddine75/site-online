@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Plateforme éducative</title>
+  <link rel="stylesheet" href="/style-home.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <aside class="sidebar">
+      <div class="profile">
+        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Professeur">
+        <h2 id="name"></h2>
+      </div>
+      <nav>
+        <ul>
+          <li><span>📝</span>Créer Examen</li>
+          <li><span>📈</span>Passer les examens</li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <h1>Votre espace de création d’examens est prêt 🎓</h1>
+
+      <div class="card-list">
+        <div class="card" id="createExamCard">
+          ➕ Créer un nouvel examen
+        </div>
+        <div class="card" id="passExamCard">
+          📋 Passer les examens
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Get user name from localStorage
+    const userName = localStorage.getItem("name");
+    const roleTitle = document.getElementById("name");
+   
+    if (roleTitle) {
+      roleTitle.textContent = userName ? userName : "Utilisateur";
+    }
+
+    // Click events
+    document.getElementById("createExamCard").onclick = function () {
+      window.location.href = "/crea_examan";
+    };
+
+    document.getElementById("passExamCard").onclick = function () {
+      window.location.href = "/lien";
+    };
+  </script>
+
+  {{#if message}}
+    <h4 class="alert alert-danger mt-4">{{message}}</h4>
+  {{/if}}
+</body>
+</html>

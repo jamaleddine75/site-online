@@ -1,0 +1,173 @@
+/* Base Styles */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #0f172a;
+    color: #cbd5e1;
+  }
+  
+  .container {
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 1rem;
+  }
+  
+  .card {
+    background-color: #1e293b;
+    padding: 2rem;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  }
+  
+  /* Titles */
+  .title {
+    font-size: 1.8rem;
+    color: white;
+    text-align: center;
+  }
+  
+  .subtitle {
+    text-align: center;
+    color: #94a3b8;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Form Groups */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #cbd5e1;
+  }
+  
+  input[type="text"],
+  input[type="number"] {
+    width: 100%;
+    padding: 0.5rem;
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-size: 1rem;
+  }
+  
+  input::placeholder {
+    color: #64748b;
+  }
+  
+  /* Radio Group */
+  .radio-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+  
+  /* Answers */
+  .answer-option {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .answer-option input[type="text"] {
+    flex-grow: 1;
+  }
+  
+  /* Add Answer Button */
+  .add-answer {
+    margin-top: 0.5rem;
+    background-color: #334155;
+    border: 1px solid #64748b;
+    padding: 0.4rem 1rem;
+    color: #e0e7ff;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+  }
+  
+  .add-answer:hover {
+    background-color: #475569;
+  }
+  
+  /* Remove Answer Button */
+  .answer-option button {
+    background-color: #f87171;
+    border: none;
+    color: white;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .answer-option button:hover {
+    background-color: #ef4444;
+  }
+  
+  /* Grid layout for Timer and Points */
+  .form-group.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  
+  /* Form Actions (Save Buttons) */
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .form-actions button {
+    flex: 1;
+    padding: 0.6rem;
+    background-color: #7c3aed;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .form-actions button:hover {
+    background-color: #6d28d9;
+  }
+  
+  /* Finale Link Section */
+  .finale-link {
+    display: none;
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: #1e293b;
+    border: 1px solid #8b5cf6;
+    border-radius: 8px;
+    justify-content: space-between;
+    align-items: center;
+    color: #e0e7ff;
+  }
+  
+  .finale-link.show {
+    display: flex;
+  }
+  
+  .finale-link button {
+    background-color: transparent;
+    border: 1px solid #8b5cf6;
+    color: #c4b5fd;
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+  }
+  
+  .finale-link button:hover {
+    background-color: #8b5cf6;
+    color: white;
+  }
+  

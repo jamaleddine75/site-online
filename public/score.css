@@ -1,0 +1,78 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #0f172a;
+    color: white;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .layout {
+    display: flex;
+    background-color: #1e293b;
+    border-radius: 12px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    background-color: #1e293b;
+    padding: 30px 20px;
+    text-align: center;
+    border-right: 1px solid #334155;
+  }
+  
+  .sidebar img {
+    width: 80px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+  }
+  
+  .sidebar p {
+    margin: 0;
+    font-weight: bold;
+  }
+  
+  /* Main content */
+  .content {
+    padding: 40px 60px;
+    text-align: center;
+  }
+  
+  .content h2 {
+    font-size: 24px;
+    color: #38bdf8;
+    margin-bottom: 20px;
+  }
+  
+  .score {
+    font-size: 48px;
+    font-weight: bold;
+    color: #60a5fa;
+    margin-bottom: 15px;
+  }
+  
+  .details {
+    color: #cbd5e1;
+    font-size: 16px;
+    margin-bottom: 30px;
+  }
+  
+  button {
+    padding: 12px 24px;
+    background-color: #3a57f9;
+    border: none;
+    color: white;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  
+  button:hover {
+    background-color: #2563eb;
+  }
+  

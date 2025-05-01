@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Résultat Examen</title>
+  <link rel="stylesheet" href="score.css">
+</head>
+<body>
+  <div class="layout">
+    <!-- ✅ Sidebar Utilisateur -->
+    <aside class="sidebar">
+      <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Utilisateur">
+      <p>Utilisateur</p>
+    </aside>
+
+    <!-- ✅ Contenu principal -->
+    <main class="content">
+      <h2>Résultat de l'examen</h2>
+      <div class="score" id="score">-- / 100</div>
+      <p class="details" id="details">Chargement...</p>
+      <button onclick="window.location.href='index.html'">Retour à l'accueil</button>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const data = JSON.parse(localStorage.getItem("resultatExamen")) || {
+        score: "--", correct: 0, total: 0
+      };
+
+      document.getElementById("score").textContent = `${data.score} / 100`;
+      document.getElementById("details").textContent =
+        `Vous avez répondu correctement à ${data.correct} sur ${data.total} questions.`;
+    });
+  </script>
+</body>
+</html>
