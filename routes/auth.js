@@ -6,9 +6,7 @@ const router = express.Router();
 router.post("/register",authcontroller.register);
 
 router.post("/login",authcontroller.login);
-router.post("/crea_examan",authcontroller.crea_examan);
+router.post("/create_exam",authcontroller.create_exam);
 
-router.post("/dirict_q",authcontroller.dirict_q);
-router.post("/qcm_q",authcontroller.qcm_q);
 
 module.exports = router;

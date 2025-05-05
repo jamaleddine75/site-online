@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Exam</title>
+
+  <script>
+    tailwind = {
+      config: {
+        darkMode: 'class'
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+
+  <!-- Navbar -->
+  <nav class="bg-white dark:bg-gray-800 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16 items-center">
+        <span class="text-xl font-semibold text-gray-800 dark:text-white">Exam Creator</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-0">
+      <h1 class="text-3xl font-bold mb-6">Create Exam</h1>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Exam Details -->
+        <div>
+          <form name="examForm" method="post" action="/auth/create_exam" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">Exam Details</h2>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium">Title</label>
+                <input type="text" name="title" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm" required>
+              </div>
+              <div>
+                <label class="block text-sm font-medium">Description</label>
+                <textarea name="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm" required></textarea>
+              </div>
+              <div>
+                <label class="block text-sm font-medium">Time Limit (minutes)</label>
+                <input type="number" name="timeLimit" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm" required>
+              </div>
+              <button id="createExamBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center justify-center">
+                <span id="createExamBtnText">Create Exam</span>
+                <svg id="createExamSpinner" class="hidden w-5 h-5 ml-2 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </button>
+            </div>
+          </form>
+
+          <div class="mt-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">Questions (<span id="questionsCount">0</span>)</h2>
+            <div name="questionsList">
+              <p class="text-center text-gray-500 dark:text-gray-400 py-4">No questions added yet.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question Form -->
+        <div>
+          <form name="questionForm" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">Add Question</h2>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium">Question Text</label>
+                <textarea name="question_text" rows="3" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm" required></textarea>
+              </div>
+              <div>
+                <label class="block text-sm font-medium">Question Type</label>
+                <select name="question_type" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm">
+                  <option value="multiple-choice">Multiple Choice</option>
+                  <option value="direct-answer">Direct Answer</option>
+                </select>
+              </div>
+
+              <!-- Multiple Choice Options -->
+              <div name="mcOptions" class="space-y-2">
+                <label class="block text-sm font-medium">Options (mark correct answer)</label>
+                <div class="space-y-2">
+                  <div class="flex items-center gap-2">
+                    <input type="radio" name="correctOption" value="0" class="h-4 w-4 text-blue-600 focus:ring-blue-500" required>
+                    <input type="text" data-option-index="0" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2" placeholder="Option 1" required>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input type="radio" name="correctOption" value="1" class="h-4 w-4 text-blue-600 focus:ring-blue-500" required>
+                    <input type="text" data-option-index="1" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2" placeholder="Option 2" required>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input type="radio" name="correctOption" value="2" class="h-4 w-4 text-blue-600 focus:ring-blue-500" required>
+                    <input type="text" data-option-index="2" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2" placeholder="Option 3" required>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input type="radio" name="correctOption" value="3" class="h-4 w-4 text-blue-600 focus:ring-blue-500" required>
+                    <input type="text" data-option-index="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2" placeholder="Option 4" required>
+                  </div>
+                </div>
+              </div>
+
+
+              <!-- Direct Answer Field -->
+              <div name="correctAnswerField" class="hidden">
+                <label class="block text-sm font-medium">Correct Answer</label>
+                <input type="text" name="correct_answer" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium">Points</label>
+                <input type="number" name="questionPoints" min="1" value="1" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm" required>
+              </div>
+
+              <button id="addQuestionBtn" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                Add Question
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Share Exam Modal -->
+  <div id="shareModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md w-full">
+      <h3 class="text-xl font-semibold mb-4">Exam Created Successfully!</h3>
+      <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">Copy this link and share it with participants:</p>
+      <div class="flex items-center space-x-2 mb-4">
+        <input type="text" name="examLink" class="w-full px-3 py-2 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm" readonly>
+        <button id="copyLinkBtn" class="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700">Copy</button>
+      </div>
+      <div class="flex justify-end mt-4">
+        <button id="closeModalBtn" class="border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+          Go to Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const examForm = document.forms["examForm"];
+  const questionForm = document.forms["questionForm"];
+  const questionsList = document.querySelector('[name="questionsList"]');
+  const questionsCount = document.getElementById("questionsCount");
+  const createExamBtn = document.getElementById("createExamBtn");
+  const createExamBtnText = document.getElementById("createExamBtnText");
+  const createExamSpinner = document.getElementById("createExamSpinner");
+  const shareModal = document.getElementById("shareModal");
+  const closeModalBtn = document.getElementById("closeModalBtn");
+  const copyLinkBtn = document.getElementById("copyLinkBtn");
+  const examLinkInput = document.querySelector('[name="examLink"]');
+
+  let questions = [];
+  let questionIndex = 0;
+
+  document.getElementById("addQuestionBtn").addEventListener("click", function (e) {
+    e.preventDefault();
+
+    const question_text = questionForm.question_text.value.trim();
+    const question_type = questionForm.question_type.value;
+    const points = parseInt(questionForm.questionPoints.value);
+
+    if (!question_text) {
+      alert("Question text is required.");
+      return;
+    }
+
+    if (isNaN(points)) {
+      alert("Please enter a valid number of points.");
+      return;
+    }
+
+    let questionData = {
+      question_text,
+      question_type,
+      points,
+      position: questionIndex++
+    };
+
+    if (question_type === "multiple-choice") {
+      const options = [...questionForm.querySelectorAll('[data-option-index]')].map(input => input.value.trim());
+      const correctOption = parseInt(questionForm.correctOption.value);
+
+      if (options.some(opt => !opt)) {
+        alert("All multiple-choice options must be filled.");
+        return;
+      }
+
+      if (isNaN(correctOption) || correctOption < 0 || correctOption >= options.length) {
+        alert("Select a valid correct option.");
+        return;
+      }
+
+      questionData.options = options;
+      questionData.correctOption = correctOption;
+    } else if (question_type === "direct-answer") {
+      const correct_answer = questionForm.correct_answer.value.trim();
+      if (!correct_answer) {
+        alert("Please provide a correct answer.");
+        return;
+      }
+      questionData.correct_answer = correct_answer;
+    }
+
+    questions.push(questionData);
+    questionsCount.textContent = questions.length;
+    renderQuestions();
+    questionForm.reset();
+    document.querySelector('[name="mcOptions"]').classList.add("hidden");
+    document.querySelector('[name="correctAnswerField"]').classList.add("hidden");
+  });
+
+  questionForm.question_type.addEventListener("change", (e) => {
+    const type = e.target.value;
+    document.querySelector('[name="mcOptions"]').classList.toggle("hidden", type !== "multiple-choice");
+    document.querySelector('[name="correctAnswerField"]').classList.toggle("hidden", type !== "direct-answer");
+  });
+
+  function renderQuestions() {
+    if (questions.length === 0) {
+      questionsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 py-4">No questions added yet.</p>';
+      return;
+    }
+
+    questionsList.innerHTML = questions.map((q, i) => `
+      <div class="mb-2 p-2 border dark:border-gray-600 rounded">
+        <p><strong>Q${i + 1}:</strong> ${q.question_text} (${q.points} pt)</p>
+        <p class="text-sm text-gray-500">${q.question_type}</p>
+      </div>
+    `).join('');
+  }
+
+  examForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (questions.length === 0) {
+      alert("Please add at least one question.");
+      return;
+    }
+
+    const title = examForm.title.value.trim();
+    const description = examForm.description.value.trim();
+    const timeLimit = parseInt(examForm.timeLimit.value);
+
+    createExamBtn.disabled = true;
+    createExamBtnText.textContent = "Creating...";
+    createExamSpinner.classList.remove("hidden");
+
+    try {
+      const response = await fetch("/auth/create_exam", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ title, description, timeLimit, questions })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        examLinkInput.value = `${window.location.origin}/exam/${data.examId}`;
+        shareModal.classList.remove("hidden");
+      } else {
+        alert(data.error || "Error creating exam.");
+      }
+    } catch (err) {
+      alert("Network or server error.");
+      console.error(err);
+    } finally {
+      createExamBtn.disabled = false;
+      createExamBtnText.textContent = "Create Exam";
+      createExamSpinner.classList.add("hidden");
+    }
+  });
+
+  closeModalBtn.addEventListener("click", () => {
+    window.location.href = "/home";
+  });
+
+  copyLinkBtn.addEventListener("click", () => {
+    navigator.clipboard.writeText(examLinkInput.value)
+      .then(() => alert("Link copied to clipboard!"))
+      .catch(() => alert("Failed to copy link."));
+  });
+</script>
+
+</body>
+</html>

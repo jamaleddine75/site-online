@@ -9,6 +9,7 @@ const db = mysql.createConnection({
   database: process.env.DATABASE,
 })
 
+
 exports.register =(req, res) => {
     console.log(req.body);
     
@@ -99,140 +100,123 @@ exports.login = async (req, res) => {
 };
 
   
-exports.crea_examan = (req, res) => {
-  console.log(req.body);
 
-  const { name, duree, propieter, description, type } = req.body;
+exports.create_exam = (req, res) => {
+  const { title, description, timeLimit, questions } = req.body;
 
-  if (!name || !duree || !propieter || !description || !type) {
-    // Assuming flash or session-based messaging
-    
-    return res.redirect('/crea_examan');
+  console.log('Exam Details:', { title, description, timeLimit, questions });
+
+  // Validate questions is an array
+  if (!Array.isArray(questions)) {
+    return res.status(400).json({ error: 'Questions should be an array' });
   }
 
-  const checkExamQuery = "SELECT name FROM exams WHERE name = ?";
-  db.query(checkExamQuery, [name], (error, results) => {
-    if (error) {
-      console.error("Error during exam name check:", error);
-      
-      return res.redirect('/crea_examan');
-    }
-
-    if (results.length > 0) {
-      return res.redirect('/crea_examan',{message :"That exam name is already in use"});
-    }
-
-    const examData = { name, duree, propieter, description, type };
-
-    db.query("INSERT INTO exams SET ?", examData, (error, results) => {
-      if (error) {
-        console.error("Error inserting exam:", error);
-       
-        return res.redirect('/crea_examan',{message :"Failed to create exam"});
+  // Insert exam
+  db.query(
+    'INSERT INTO exams (title, description, time_limit) VALUES (?, ?, ?)',
+    [title, description, timeLimit],
+    (err, result) => {
+      if (err) {
+        console.error('Error inserting exam:', err);
+        return res.status(500).json({ error: 'Database error' });
       }
-        else{
-           console.log("Exam created successfully!");
 
-      // Redirect based on type
-      if (type.toLowerCase() == "qcm") {
-        console.log("QCM question type selected");
-        return res.render('qcm_q');
-      } else if (type.toLowerCase() == "direct") {
-        console.log("Direct question type selected");
-        return res.redirect('/dirict_q');
-      } else {
-        console.log("Unknown question type selected");
-       
-        return res.render('/crea_examan',{message : "Unknown question type selected"});
-      }
-        }
-     
-    });
-  });
+      const examId = result.insertId;
+
+      // Process each question
+      const questionInserts = questions.map((q, index) => {
+        return new Promise((resolve, reject) => {
+          // Insert question
+          db.query(
+            'INSERT INTO questions (exam_id, question_text, question_type, points, position) VALUES (?, ?, ?, ?, ?)',
+            [examId, q.question_text, q.question_type, q.points, q.position],
+            (err, questionResult) => {
+              if (err) return reject(err);
+
+              const questionId = questionResult.insertId;
+
+              // Handle multiple-choice questions
+              if (q.question_type === 'multiple-choice') {
+                if (!q.options || q.options.length === 0) {
+                  return reject(new Error('Multiple-choice questions require options'));
+                }
+
+                const optionInserts = q.options.map((opt, idx) => {
+                  return new Promise((resOpt, rejOpt) => {
+                    db.query(
+                      'INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)',
+                      [questionId, opt, idx === q.correctOption],
+                      (err) => (err ? rejOpt(err) : resOpt())
+                    );
+                  });
+                });
+
+                Promise.all(optionInserts)
+                  .then(resolve)
+                  .catch(reject);
+              } 
+              // Handle direct-answer questions
+              else if (q.question_type === 'direct-answer') {
+                if (!q.correct_answer) {
+                  return reject(new Error('Direct-answer questions require a correct answer'));
+                }
+
+                db.query(
+                  'INSERT INTO direct_answers (question_id, correct_answer) VALUES (?, ?)',
+                  [questionId, q.correct_answer],
+                  (err) => (err ? reject(err) : resolve())
+                );
+              } 
+              else {
+                reject(new Error(`Unknown question type: ${q.question_type}`));
+              }
+            }
+          );
+        });
+      });
+
+      Promise.all(questionInserts)
+        .then(() => res.json({ message: 'Exam created', examId }))
+        .catch((err) => {
+          console.error('Error:', err);
+          res.status(500).json({ error: err.message || 'Error creating exam' });
+        });
+    }
+  );
 };
 
-exports.dirict_q = async (req, res) => {
+
+/*exports.get_exam_by_id = async (req, res) => {
+  let connection;
   try {
-    // 1. Destructure and validate input
-    const { question_text, correct_answer, time_limit, points, exam_id } = req.body;
+    connection = await db.getConnection();
 
-    if (!question_text && !correct_answer && !points && !exam_id) {
-      return res.status(400).render('dirict_q', {
-        message: 'All fields are required (question_text, correct_answer, points, exam_id)'
-      });
+    const [exams] = await connection.query('SELECT * FROM exams WHERE id = ?', [req.params.id]);
+
+    if (exams.length === 0) {
+      return res.status(404).json({ error: 'Exam not found' });
     }
 
-    // 2. Verify exam exists first
-    const examCheck = await new Promise((resolve, reject) => {
-      db.query('SELECT 1 FROM exams WHERE exam_id = ?', [exam_id], (err, results) => {
-        if (err) reject(err);
-        resolve(results);
-      });
-    });
+    const exam = exams[0];
+    const [questions] = await connection.query('SELECT * FROM questions WHERE exam_id = ?', [exam.id]);
 
-    if (examCheck.length === 0) {
-      return res.status(404).render('dirict_q', {
-        message: `Exam with ID ${exam_id} not found`
-      });
+    for (const question of questions) {
+      if (question.type === 'multiple-choice') {
+        const [options] = await connection.query(
+          'SELECT text, is_correct FROM options WHERE question_id = ?',
+          [question.id]
+        );
+        question.options = options.map(opt => opt.text);
+        question.correctAnswer = options.findIndex(opt => opt.is_correct);
+      }
     }
 
-    // 3. Insert the question
-    const insertResult = await new Promise((resolve, reject) => {
-      db.query(
-        'INSERT INTO direct_questions SET ?', 
-        {
-          exam_id: exam_id,
-          question_text: question_text,
-          correct_answer: correct_answer,
-          time_limit: time_limit || null,
-          points: points
-        },
-        (err, results) => {
-          if (err) reject(err);
-          resolve(results);
-        }
-      );
-    });
-
-    // 4. Success response
-    return res.status(201).render('dirict_q', {
-      success: true,
-      message: 'Direct question added successfully!',
-      questionId: insertResult.insertId
-    });
+    res.json({ ...exam, questions });
 
   } catch (error) {
-    console.error('Error:', error);
-    return res.status(500).render('dirict_q', {
-      message: 'An error occurred while adding the question'
-    });
+    console.error('Error fetching exam:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) connection.release();
   }
-};
-exports.qcm_q = (req, res) => {
-  console.log(req.body);
-  const { qestion,time, pionte,chois1,chois2,chois3,chois4,chois5,chois6 } = req.body;
-
-  if (!qestion) {
-   
-    return res.redirect('/qcm_q',{message : "Question is required"});
-  }
-
-  db.query('INSERT INTO qcm SET ?', { qestion: qestion,
-     time:time,
-     pionte:pionte,
-     chois1:chois1,
-     chois2:chois2
-     ,chois3:chois3
-     ,chois4:chois4,
-     chois5:chois5,
-     chois6:chois6}, (error, results) => {
-    if (error) {
-      console.log(error);
-      
-      return res.render('qcm_q',{message : "Failed to create question"});
-    } else {
-      
-      return res.render('qcm_q',{message :  "QCM question created successfully"});
-    }
-  });
-};
+};*/

@@ -14,18 +14,10 @@ router.get("/registre", (req, res) => {
   router.get("/lien", (req, res) => {
     res.render("lien")
   });
-  router.get("/crea_examan", (req, res) => {
-    res.render("crea_examan")
+  router.get("/create_exam", (req, res) => {
+    res.render("create_exam")
   })
-  router.get("/dirict_q", (req, res) => {
-    res.render("dirict_q")
-  })
-  router.get("/qcm_q", (req, res) => {
-    res.render("qcm_q")
-  })
-  router.get("/exam_t", (req, res) => {
-    res.render("exam_t")
-  })
+  
 
  
 
