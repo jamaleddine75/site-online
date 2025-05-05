@@ -85,8 +85,8 @@ exports.login = async (req, res) => {
     // Envoie le token dans un cookie sécurisé
     res.cookie('jwt', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // true en prod avec HTTPS
-      maxAge: 24 * 60 * 60 * 1000, // 1 jour
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
     console.log("Login successful!");
@@ -111,78 +111,92 @@ exports.create_exam = (req, res) => {
     return res.status(400).json({ error: 'Questions should be an array' });
   }
 
-  // Insert exam
-  db.query(
-    'INSERT INTO exams (title, description, time_limit) VALUES (?, ?, ?)',
-    [title, description, timeLimit],
-    (err, result) => {
-      if (err) {
-        console.error('Error inserting exam:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
+  // Extract user email from the JWT token
+  const token = req.cookies.jwt;
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 
-      const examId = result.insertId;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userEmail = decoded.email;
 
-      // Process each question
-      const questionInserts = questions.map((q, index) => {
-        return new Promise((resolve, reject) => {
-          // Insert question
-          db.query(
-            'INSERT INTO questions (exam_id, question_text, question_type, points, position) VALUES (?, ?, ?, ?, ?)',
-            [examId, q.question_text, q.question_type, q.points, q.position],
-            (err, questionResult) => {
-              if (err) return reject(err);
+    // Insert exam
+    db.query(
+      'INSERT INTO exams (title, description, time_limit, created_by) VALUES (?, ?, ?, ?)',
+      [title, description, timeLimit, userEmail],
+      (err, result) => {
+        if (err) {
+          console.error('Error inserting exam:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
 
-              const questionId = questionResult.insertId;
+        const examId = result.insertId;
 
-              // Handle multiple-choice questions
-              if (q.question_type === 'multiple-choice') {
-                if (!q.options || q.options.length === 0) {
-                  return reject(new Error('Multiple-choice questions require options'));
-                }
+        // Process each question
+        const questionInserts = questions.map((q, index) => {
+          return new Promise((resolve, reject) => {
+            // Insert question
+            db.query(
+              'INSERT INTO questions (exam_id, question_text, question_type, points, position) VALUES (?, ?, ?, ?, ?)',
+              [examId, q.question_text, q.question_type, q.points, q.position],
+              (err, questionResult) => {
+                if (err) return reject(err);
 
-                const optionInserts = q.options.map((opt, idx) => {
-                  return new Promise((resOpt, rejOpt) => {
-                    db.query(
-                      'INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)',
-                      [questionId, opt, idx === q.correctOption],
-                      (err) => (err ? rejOpt(err) : resOpt())
-                    );
+                const questionId = questionResult.insertId;
+
+                // Handle multiple-choice questions
+                if (q.question_type === 'multiple-choice') {
+                  if (!q.options || q.options.length === 0) {
+                    return reject(new Error('Multiple-choice questions require options'));
+                  }
+
+                  const optionInserts = q.options.map((opt, idx) => {
+                    return new Promise((resOpt, rejOpt) => {
+                      db.query(
+                        'INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)',
+                        [questionId, opt, idx === q.correctOption],
+                        (err) => (err ? rejOpt(err) : resOpt())
+                      );
+                    });
                   });
-                });
 
-                Promise.all(optionInserts)
-                  .then(resolve)
-                  .catch(reject);
-              } 
-              // Handle direct-answer questions
-              else if (q.question_type === 'direct-answer') {
-                if (!q.correct_answer) {
-                  return reject(new Error('Direct-answer questions require a correct answer'));
+                  Promise.all(optionInserts)
+                    .then(resolve)
+                    .catch(reject);
+                } 
+                // Handle direct-answer questions
+                else if (q.question_type === 'direct-answer') {
+                  if (!q.correct_answer) {
+                    return reject(new Error('Direct-answer questions require a correct answer'));
+                  }
+
+                  db.query(
+                    'INSERT INTO direct_answers (question_id, correct_answer) VALUES (?, ?)',
+                    [questionId, q.correct_answer],
+                    (err) => (err ? reject(err) : resolve())
+                  );
+                } 
+                else {
+                  reject(new Error(`Unknown question type: ${q.question_type}`));
                 }
-
-                db.query(
-                  'INSERT INTO direct_answers (question_id, correct_answer) VALUES (?, ?)',
-                  [questionId, q.correct_answer],
-                  (err) => (err ? reject(err) : resolve())
-                );
-              } 
-              else {
-                reject(new Error(`Unknown question type: ${q.question_type}`));
               }
-            }
-          );
+            );
+          });
         });
-      });
 
-      Promise.all(questionInserts)
-        .then(() => res.json({ message: 'Exam created', examId }))
-        .catch((err) => {
-          console.error('Error:', err);
-          res.status(500).json({ error: err.message || 'Error creating exam' });
-        });
-    }
-  );
+        Promise.all(questionInserts)
+          .then(() => res.json({ message: 'Exam created', examId }))
+          .catch((err) => {
+            console.error('Error:', err);
+            res.status(500).json({ error: err.message || 'Error creating exam' });
+          });
+      }
+    );
+  } catch (err) {
+    console.error('Error verifying token:', err);
+    res.status(401).json({ error: 'Invalid token' });
+  }
 };
 
 
@@ -220,3 +234,29 @@ exports.create_exam = (req, res) => {
     if (connection) connection.release();
   }
 };*/
+
+exports.get_exams = (req, res) => {
+  const token = req.cookies.jwt;
+  if (!token) {
+    console.error('JWT token is missing');
+    return res.status(401).json({ error: 'Unauthorized: JWT token is missing' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userEmail = decoded.email;
+
+    const sql = 'SELECT * FROM exams WHERE created_by = ?';
+    db.query(sql, [userEmail], (err, results) => {
+      if (err) {
+        console.error('Error fetching exams:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      res.json(results);
+    });
+  } catch (err) {
+    console.error('Error verifying token:', err);
+    res.status(401).json({ error: 'Invalid token' });
+  }
+};

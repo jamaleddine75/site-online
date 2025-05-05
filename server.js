@@ -5,12 +5,14 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const dotenv = require("dotenv")
 const path = require("path")
+const cookieParser = require('cookie-parser');
 const app = express();
 const port = 3002;
 dotenv.config( {path : "./.env"})
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 // Connexion MySQL
 const db = mysql.createConnection({

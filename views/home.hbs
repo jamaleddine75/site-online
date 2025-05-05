@@ -32,26 +32,78 @@
           📋 Passer les examens
         </div>
       </div>
+      <h2 style="margin-top: 30px;">Vos examens créés</h2>
+      <div id="examsList">
+        <!-- Exams will be loaded here dynamically -->
+        <p class="no-exams">Chargement de vos examens...</p>
+      </div>
+
     </main>
   </div>
 
+ 
   <script>
     // Get user name from localStorage
-    const userName = localStorage.getItem("name");
+    const userName = localStorage.getItem("name") || "Utilisateur";
     const roleTitle = document.getElementById("name");
    
     if (roleTitle) {
-      roleTitle.textContent = userName ? userName : "Utilisateur";
+      roleTitle.textContent = userName;
     }
 
     // Click events
-    document.getElementById("createExamCard").onclick = function () {
+    document.getElementById("createExamCard").addEventListener("click", function() {
       window.location.href = "/create_exam";
-    };
+    });
 
-    document.getElementById("passExamCard").onclick = function () {
+    document.getElementById("passExamCard").addEventListener("click", function() {
       window.location.href = "/lien";
-    };
+    });
+
+    // Function to load user's exams
+    async function loadExams() {
+      try {
+        const response = await fetch('/auth/exams');
+        if (!response.ok) {
+          throw new Error('Failed to fetch exams');
+        }
+
+        const exams = await response.json();
+        const examsList = document.getElementById('examsList');
+
+        if (exams.length === 0) {
+          examsList.innerHTML = '<p class="no-exams">Vous n\'avez pas encore créé d\'examens.</p>';
+          return;
+        }
+
+        examsList.innerHTML = '';
+        exams.forEach(exam => {
+          const examCard = document.createElement('div');
+          examCard.className = 'exam-card';
+
+          examCard.innerHTML = `
+            <div>
+              <h3>${exam.title}</h3>
+              <p>${exam.description || 'Pas de description'}</p>
+              <small>Durée: ${exam.time_limit} minutes</small>
+            </div>
+            <div class="exam-actions">
+              <button class="exam-btn modify-btn" data-id="${exam.id}">Modifier</button>
+              <button class="exam-btn delete-btn" data-id="${exam.id}">Supprimer</button>
+            </div>
+          `;
+
+          examsList.appendChild(examCard);
+        });
+      } catch (error) {
+        console.error('Error loading exams:', error);
+        document.getElementById('examsList').innerHTML =
+          '<p class="no-exams">Erreur lors du chargement de vos examens.</p>';
+      }
+    }
+
+    // Load exams when page loads
+    document.addEventListener('DOMContentLoaded', loadExams);
   </script>
 
   {{#if message}}
