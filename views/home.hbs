@@ -104,6 +104,33 @@
           });
         });
 
+        // Add event listeners for delete buttons
+        document.querySelectorAll('.delete-btn').forEach(button => {
+          button.addEventListener('click', async function () {
+            const examId = this.getAttribute('data-id');
+            const confirmDelete = confirm("Êtes-vous sûr de vouloir supprimer cet examen et toutes ses questions ?");
+
+            if (!confirmDelete) return;
+
+            try {
+              const response = await fetch(`/auth/exams/${examId}`, {
+                method: 'DELETE',
+              });
+
+              if (response.ok) {
+                alert("Examen et ses questions supprimés avec succès.");
+                this.closest('.exam-card').remove(); // Remove the exam card from the UI
+              } else {
+                const errorData = await response.json();
+                alert(errorData.error || "Échec de la suppression de l'examen.");
+              }
+            } catch (err) {
+              console.error(err);
+              alert("Erreur réseau ou serveur.");
+            }
+          });
+        });
+
       } catch (error) {
         console.error('Error loading exams:', error);
         document.getElementById('examsList').innerHTML =

@@ -369,3 +369,59 @@ return res.status(500).json({ error: 'Failed to update exam' });
   }
   );
 };
+
+exports.delete_exam = (req, res) => {
+  const examId = req.params.id;
+
+  // Delete questions and options related to the exam first
+   const deleteOptionsSql = 'DELETE FROM options WHERE question_id IN (SELECT id FROM questions WHERE exam_id = ?)';
+  const deleteDirectAnswersSql = 'DELETE FROM direct_answers WHERE question_id IN (SELECT id FROM questions WHERE exam_id = ?)';
+
+  const deleteQuestionsSql = 'DELETE FROM questions WHERE exam_id = ?';
+  const deleteExamSql = 'DELETE FROM exams WHERE id = ?';
+ db.query(deleteOptionsSql, [examId], (err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Failed to delete options.' });
+    }
+
+    // Delete direct answers related to the questions
+    db.query(deleteDirectAnswersSql, [examId], (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Failed to delete direct answers.' });
+      }
+    });
+  }
+  );
+  db.query(deleteDirectAnswersSql, [examId], (err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Failed to delete direct answers.' });
+    }
+
+    // Delete questions related to the exam
+  }
+  );
+  
+  db.query(deleteQuestionsSql, [examId], (err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Failed to delete questions.' });
+    }
+
+    // Delete the exam after deleting its questions
+    db.query(deleteExamSql, [examId], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Failed to delete exam.' });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Exam not found.' });
+      }
+
+      res.status(200).json({ message: 'Exam and its related data deleted successfully.' });
+    });
+  });
+};

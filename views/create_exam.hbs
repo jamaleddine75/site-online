@@ -97,20 +97,15 @@
                   </div>
                 </div>
                 <div class="flex gap-2 mt-2">
-                  <button type="button" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md text-white addOptionBtn">Ajouter une option</button>
-                  <button type="button" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md text-white removeOptionBtn">Supprimer une option</button>
+                  <button type="button" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md text-white addOptionBtn">Add Option</button>
+                  <button type="button" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md text-white removeOptionBtn">Remove Option</button>
                 </div>
               </div>
 
               <!-- Direct Answer Field -->
               <div name="correctAnswerField" class="hidden">
                 <label class="block text-sm font-medium">Correct Answer</label>
-
-
-              <!-- Direct Answer Field -->
-              <div name="correctAnswerField" class="hidden">
-                <label class="block text-sm font-medium">Correct Answer</label>
-                <input type="text" name="correct_answer" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm">
+                <input type="text" name="correct_answer" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm" placeholder="Enter the correct answer">
               </div>
 
               <div>
@@ -118,7 +113,8 @@
                 <input type="number" name="questionPoints" min="1" value="1" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm" required>
               </div>
 
-              <button id="addQuestionBtn" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+              <!-- Add Question Button -->
+              <button id="addQuestionBtn" type="button" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
                 Add Question
               </button>
             </div>
@@ -220,8 +216,21 @@
 
   questionForm.question_type.addEventListener("change", (e) => {
     const type = e.target.value;
-    document.querySelector('[name="mcOptions"]').classList.toggle("hidden", type !== "multiple-choice");
-    document.querySelector('[name="correctAnswerField"]').classList.toggle("hidden", type !== "direct-answer");
+
+    // Toggle visibility of fields
+    const mcOptions = document.querySelector('[name="mcOptions"]');
+    const correctAnswerField = document.querySelector('[name="correctAnswerField"]');
+    mcOptions.classList.toggle("hidden", type !== "multiple-choice");
+    correctAnswerField.classList.toggle("hidden", type !== "direct-answer");
+
+    // Enable/disable required attributes
+    const mcInputs = mcOptions.querySelectorAll("input[type='text']");
+    mcInputs.forEach(input => input.required = (type === "multiple-choice"));
+
+    const correctAnswerInput = correctAnswerField.querySelector("input[name='correct_answer']");
+    if (correctAnswerInput) {
+      correctAnswerInput.required = (type === "direct-answer");
+    }
   });
 
   function renderQuestions() {
@@ -288,6 +297,29 @@
     navigator.clipboard.writeText(examLinkInput.value)
       .then(() => alert("Link copied to clipboard!"))
       .catch(() => alert("Failed to copy link."));
+  });
+
+  document.querySelector(".addOptionBtn").addEventListener("click", () => {
+    const optionsContainer = document.querySelector(".optionsContainer");
+    const optionIndex = optionsContainer.children.length;
+
+    const optionHTML = `
+      <div class="flex items-center gap-2">
+        <input type="radio" name="correctOption" value="${optionIndex}" class="h-4 w-4 text-blue-600 focus:ring-blue-500" required>
+        <input type="text" data-option-index="${optionIndex}" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 text-black" placeholder="Option ${optionIndex + 1}" required>
+      </div>
+    `;
+
+    optionsContainer.insertAdjacentHTML("beforeend", optionHTML);
+  });
+
+  document.querySelector(".removeOptionBtn").addEventListener("click", () => {
+    const optionsContainer = document.querySelector(".optionsContainer");
+    if (optionsContainer.children.length > 2) {
+      optionsContainer.removeChild(optionsContainer.lastElementChild);
+    } else {
+      alert("You must have at least two options.");
+    }
   });
 </script>
 

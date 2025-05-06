@@ -10,5 +10,6 @@ router.post("/create_exam",authcontroller.create_exam);
 router.get('/exams', authcontroller.get_exams);
 router.get('/exams/:id', authcontroller.get_exam_by_id);
 router.put('/exams/:id', authcontroller.update_exam);
+router.delete('/exams/:id', authcontroller.delete_exam);
 
 module.exports = router;
