@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Modifier un examen</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .text-black {
+      color: black;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen p-6">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Modifier un examen</h1>
+    <p>Exam ID: {{examId}}</p>
+
+    <form id="examForm" class="space-y-6">
+      <div>
+        <label class="block mb-1 text-sm font-medium">Titre</label>
+        <input type="text" id="title" name="title" class="w-full rounded-md border-gray-700 bg-gray-800 text-white p-2" required />
+      </div>
+
+      <div>
+        <label class="block mb-1 text-sm font-medium">Description</label>
+        <textarea id="description" name="description" class="w-full rounded-md border-gray-700 bg-gray-800 text-white p-2" rows="3"></textarea>
+      </div>
+
+      <div>
+        <label class="block mb-1 text-sm font-medium">Durée (minutes)</label>
+        <input type="number" id="time_limit" name="duration" class="w-full rounded-md border-gray-700 bg-gray-800 text-white p-2" required />
+      </div>
+
+      <div id="questionsContainer" class="space-y-6"></div>
+
+      <div class="flex justify-between">
+        <button type="button" onclick="addQuestion()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md text-white">Ajouter une question</button>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-white">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+
+  <template id="questionTemplate">
+    <div class="border border-gray-700 p-4 rounded-md bg-gray-800 space-y-4 question-block">
+      <div>
+        <label class="block text-sm font-medium">Question</label>
+        <input type="text" name="questionText" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" required />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium">Type</label>
+        <select name="questionType" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" onchange="toggleOptions(this)" required>
+          <option value="direct-answer">Réponse directe</option>
+          <option value="multiple">Choix multiple</option>
+        </select>
+      </div>
+
+      <!-- Correct Answer for Direct Answer -->
+      <div name="textCorrectAnswer" class="space-y-2 hidden">
+        <label class="block text-sm font-medium">Réponse correcte</label>
+        <input type="text" name="correctAnswer" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Entrez la réponse correcte" />
+      </div>
+
+      <!-- Multiple Choice Options -->
+      <div name="mcOptions" class="space-y-2 hidden">
+        <label class="block text-sm font-medium">Options (mark correct answer)</label>
+        <div class="space-y-2 optionsContainer">
+          <div class="flex items-center gap-2">
+            <input type="radio" name="correctOption" value="0" required class="h-4 w-4 text-blue-600 focus:ring-blue-500" />
+            <input type="text" name="option1" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Option 1" required />
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="radio" name="correctOption" value="1" required class="h-4 w-4 text-blue-600 focus:ring-blue-500" />
+            <input type="text" name="option2" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Option 2" required />
+          </div>
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button type="button" class="bg-blue-600 text-white px-2 py-1 rounded-md text-sm hover:bg-blue-700 addOptionBtn">Ajouter une option</button>
+          <button type="button" class="bg-red-600 text-white px-2 py-1 rounded-md text-sm hover:bg-red-700 removeOptionBtn">Supprimer une option</button>
+        </div>
+      </div>
+
+      <button type="button" onclick="removeQuestion(this)" class="bg-red-700 hover:bg-red-800 px-2 py-1 text-sm rounded-md text-white">Supprimer cette question</button>
+    </div>
+  </template>
+
+<script>
+  const examId = "{{examId}}"; // Make sure this is correctly rendered by your template engine
+
+  const questionsContainer = document.getElementById("questionsContainer");
+
+  document.getElementById("examForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const title = document.getElementById("title").value;
+    const description = document.getElementById("description").value;
+    const time_limit = parseInt(document.getElementById("time_limit").value);
+
+    const questions = [...document.querySelectorAll(".question-block")].map((block) => {
+      const text = block.querySelector('input[name="questionText"]').value;
+      const type = block.querySelector('select[name="questionType"]').value;
+
+      if (type === "multiple") {
+        const optionDivs = block.querySelectorAll(".optionsContainer > div");
+        const options = Array.from(optionDivs).map(div => div.querySelector('input[type="text"]').value);
+        const correctIndex = Array.from(optionDivs).findIndex(div => div.querySelector('input[type="radio"]').checked);
+        return { text, type, options, correctAnswer: options[correctIndex] };
+      } else if (type === "direct-answer") {
+        const correctAnswer = block.querySelector('input[name="correctAnswer"]').value;
+        return { text, type, correctAnswer };
+      }
+    });
+
+    await fetch(`/auth/exams/${examId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, description, time_limit, questions })
+    });
+
+    alert("Examen modifié !");
+  });
+
+  async function fetchExam() {
+    try {
+      const res = await fetch(`/auth/exams/${examId}`);
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("Failed response:", res.status, errText);
+        throw new Error("Failed to fetch exam");
+      }
+
+      const exam = await res.json();
+
+      document.getElementById("title").value = exam.title;
+      document.getElementById("description").value = exam.description;
+      document.getElementById("time_limit").value = exam.time_limit;
+
+      exam.questions.forEach((q) => addQuestion(q));
+    } catch (error) {
+      console.error("Error fetching exam:", error);
+      alert("Erreur lors du chargement de l’examen");
+    }
+  }
+
+  function addQuestion(data = {}) {
+    const template = document.getElementById("questionTemplate");
+    const clone = template.content.cloneNode(true);
+    const block = clone.querySelector(".question-block");
+
+    const questionInput = block.querySelector('input[name="questionText"]');
+    const typeSelect = block.querySelector('select[name="questionType"]');
+    const mcOptions = block.querySelector('[name="mcOptions"]');
+    const textCorrectAnswer = block.querySelector('[name="textCorrectAnswer"]');
+    const optionsContainer = block.querySelector('.optionsContainer');
+
+    if (data.text) questionInput.value = data.text;
+    if (data.type) typeSelect.value = data.type;
+
+    if (data.type === "multiple") {
+      mcOptions.classList.remove("hidden");
+      textCorrectAnswer.classList.add("hidden");
+
+      // Clear default options
+      optionsContainer.innerHTML = "";
+      data.options.forEach((opt, i) => {
+        const div = document.createElement("div");
+        div.className = "flex items-center gap-2";
+        div.innerHTML = `
+          <input type="radio" name="correctOption" value="${i}" class="h-4 w-4 text-blue-600 focus:ring-blue-500" ${opt === data.correctAnswer ? "checked" : ""} required />
+          <input type="text" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Option ${i + 1}" value="${opt}" required />
+        `;
+        optionsContainer.appendChild(div);
+      });
+    } else if (data.type === "direct-answer") {
+      mcOptions.classList.add("hidden");
+      textCorrectAnswer.classList.remove("hidden");
+      textCorrectAnswer.querySelector('input[name="correctAnswer"]').value = data.correctAnswer || "";
+
+      // Remove the `required` attribute from hidden radio buttons
+      const radios = mcOptions.querySelectorAll('input[name="correctOption"]');
+      radios.forEach((radio) => radio.removeAttribute("required"));
+    }
+
+    block.querySelector('.addOptionBtn').addEventListener('click', () => {
+      const count = optionsContainer.children.length;
+      if (count >= 6) return alert("Maximum 6 options allowed.");
+      const div = document.createElement("div");
+      div.className = "flex items-center gap-2";
+      div.innerHTML = `
+        <input type="radio" name="correctOption" value="${count}" class="h-4 w-4 text-blue-600 focus:ring-blue-500" required />
+        <input type="text" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Option ${count + 1}" required />
+      `;
+      optionsContainer.appendChild(div);
+    });
+
+    block.querySelector('.removeOptionBtn').addEventListener('click', () => {
+      const count = optionsContainer.children.length;
+      if (count <= 2) return alert("Minimum 2 options required.");
+      optionsContainer.removeChild(optionsContainer.lastElementChild);
+    });
+
+    questionsContainer.appendChild(clone);
+  }
+
+  function removeQuestion(btn) {
+    btn.closest(".question-block").remove();
+  }
+
+  function toggleOptions(select) {
+    const mcOptions = select.closest(".question-block").querySelector('[name="mcOptions"]');
+    const textCorrectAnswer = select.closest(".question-block").querySelector('[name="textCorrectAnswer"]');
+    const radios = mcOptions.querySelectorAll('input[name="correctOption"]');
+
+    if (select.value === "multiple") {
+      mcOptions.classList.remove("hidden");
+      textCorrectAnswer.classList.add("hidden");
+
+      // Add the `required` attribute to radio buttons
+      radios.forEach((radio) => radio.setAttribute("required", "true"));
+    } else if (select.value === "direct-answer") {
+      mcOptions.classList.add("hidden");
+      textCorrectAnswer.classList.remove("hidden");
+
+      // Remove the `required` attribute from radio buttons
+      radios.forEach((radio) => radio.removeAttribute("required"));
+    }
+  }
+
+  // Fetch the exam when page loads
+  fetchExam();
+</script>
+
+
+</body>
+</html>

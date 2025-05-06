@@ -95,6 +95,15 @@
 
           examsList.appendChild(examCard);
         });
+
+        // Add event listeners for modify buttons
+        document.querySelectorAll('.modify-btn').forEach(button => {
+          button.addEventListener('click', function() {
+            const examId = this.getAttribute('data-id');
+            window.location.href = `/modifierexam/${examId}`;
+          });
+        });
+
       } catch (error) {
         console.error('Error loading exams:', error);
         document.getElementById('examsList').innerHTML =

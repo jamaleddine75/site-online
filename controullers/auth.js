@@ -200,40 +200,31 @@ exports.create_exam = (req, res) => {
 };
 
 
-/*exports.get_exam_by_id = async (req, res) => {
-  let connection;
-  try {
-    connection = await db.getConnection();
+exports.get_exam_by_id = (req, res) => {
+  const examId = req.params.id;
 
-    const [exams] = await connection.query('SELECT * FROM exams WHERE id = ?', [req.params.id]);
+  const sqlExam = 'SELECT * FROM exams WHERE id = ?';
+  const sqlQuestions = 'SELECT * FROM questions WHERE id = ?';
 
-    if (exams.length === 0) {
+  db.query(sqlExam, [examId], (err, examResults) => {
+    if (err || examResults.length === 0) {
       return res.status(404).json({ error: 'Exam not found' });
     }
 
-    const exam = exams[0];
-    const [questions] = await connection.query('SELECT * FROM questions WHERE exam_id = ?', [exam.id]);
+    const exam = examResults[0];
 
-    for (const question of questions) {
-      if (question.type === 'multiple-choice') {
-        const [options] = await connection.query(
-          'SELECT text, is_correct FROM options WHERE question_id = ?',
-          [question.id]
-        );
-        question.options = options.map(opt => opt.text);
-        question.correctAnswer = options.findIndex(opt => opt.is_correct);
+    db.query(sqlQuestions, [examId], (err, questionResults) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error fetching questions' });
       }
-    }
 
-    res.json({ ...exam, questions });
+      exam.questions = questionResults;
+      res.json(exam);
+    });
+  });
+};
 
-  } catch (error) {
-    console.error('Error fetching exam:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    if (connection) connection.release();
-  }
-};*/
+
 
 exports.get_exams = (req, res) => {
   const token = req.cookies.jwt;
@@ -259,4 +250,122 @@ exports.get_exams = (req, res) => {
     console.error('Error verifying token:', err);
     res.status(401).json({ error: 'Invalid token' });
   }
+};
+
+exports.update_exam = (req, res) => {
+  const examId = req.params.id;
+  const { title, description, time_limit, questions } = req.body;
+
+// First, update the exam info
+const updateExamSql = 'UPDATE exams SET title = ?, description = ?, time\_limit= ? WHERE id = ?';
+db.query(updateExamSql, [title, description,time_limit, examId], (err) => {
+if (err) {
+console.error('Error updating exam:', err);
+return res.status(500).json({ error: 'Failed to update exam' });
+}
+  
+
+  
+
+    // Ensure the user owns the exam
+    db.query('SELECT * FROM exams WHERE id = ? AND created_by = ?', [examId, userEmail], (err, results) => {
+      if (err) {
+        console.error('Error verifying ownership:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+
+      if (results.length === 0) {
+        return res.status(403).json({ error: 'You are not authorized to update this exam' });
+      }
+
+      // Update exam info
+      const updateExamSql = 'UPDATE exams SET title = ?, description = ?, time_limit = ? WHERE id = ?';
+      db.query(updateExamSql, [title, description, time_limit, examId], (err) => {
+        if (err) {
+          console.error('Error updating exam:', err);
+          return res.status(500).json({ error: 'Failed to update exam' });
+        }
+
+        // Delete old questions and related data
+        db.query('SELECT id FROM questions WHERE exam_id = ?', [examId], (err, questionRows) => {
+          if (err) {
+            console.error('Error fetching old questions:', err);
+            return res.status(500).json({ error: 'Failed to fetch old questions' });
+          }
+
+          const questionIds = questionRows.map(row => row.id);
+
+          const deletePromises = [
+            db.query('DELETE FROM options WHERE question_id IN (?)', [questionIds]),
+            db.query('DELETE FROM direct_answers WHERE question_id IN (?)', [questionIds]),
+            db.query('DELETE FROM questions WHERE exam_id = ?', [examId])
+          ];
+
+          Promise.all(deletePromises.map(p => new Promise((resolve, reject) => {
+            p[1] ? reject(p[1]) : resolve();
+          })))
+          .then(() => {
+            // Insert updated questions
+            const questionInserts = questions.map(q => {
+              return new Promise((resolve, reject) => {
+                db.query(
+                  'INSERT INTO questions (exam_id, question_text, question_type, points, position) VALUES (?, ?, ?, ?, ?)',
+                  [examId, q.question_text, q.question_type, q.points, q.position],
+                  (err, result) => {
+                    if (err) return reject(err);
+
+                    const questionId = result.insertId;
+
+                    if (q.question_type === 'multiple-choice') {
+                      if (!q.options || q.options.length === 0) {
+                        return reject(new Error('Multiple-choice questions require options'));
+                      }
+
+                      const optionInserts = q.options.map((opt, idx) => {
+                        return new Promise((resOpt, rejOpt) => {
+                          db.query(
+                            'INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)',
+                            [questionId, opt, idx === q.correctOption],
+                            (err) => (err ? rejOpt(err) : resOpt())
+                          );
+                        });
+                      });
+
+                      Promise.all(optionInserts).then(resolve).catch(reject);
+                    } else if (q.question_type === 'direct-answer') {
+                      if (!q.correct_answer) {
+                        return reject(new Error('Direct-answer questions require a correct answer'));
+                      }
+
+                      db.query(
+                        'INSERT INTO direct_answers (question_id, correct_answer) VALUES (?, ?)',
+                        [questionId, q.correct_answer],
+                        (err) => (err ? reject(err) : resolve())
+                      );
+                    } else {
+                      reject(new Error(`Unknown question type: ${q.question_type}`));
+                    }
+                  }
+                );
+              });
+            });
+
+            Promise.all(questionInserts)
+              .then(() => res.json({ message: 'Exam updated successfully' }))
+              .catch((err) => {
+                console.error('Error inserting updated questions:', err);
+                res.status(500).json({ error: err.message || 'Error inserting updated questions' });
+              });
+          })
+          .catch(err => {
+            console.error('Error deleting old questions:', err);
+            res.status(500).json({ error: 'Failed to delete old questions' });
+          });
+        });
+      });
+    });
+
+ 
+  }
+  );
 };

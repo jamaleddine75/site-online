@@ -86,25 +86,25 @@
               <!-- Multiple Choice Options -->
               <div name="mcOptions" class="space-y-2">
                 <label class="block text-sm font-medium">Options (mark correct answer)</label>
-                <div class="space-y-2">
+                <div class="space-y-2 optionsContainer">
                   <div class="flex items-center gap-2">
                     <input type="radio" name="correctOption" value="0" class="h-4 w-4 text-blue-600 focus:ring-blue-500" required>
-                    <input type="text" data-option-index="0" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2" placeholder="Option 1" required>
+                    <input type="text" data-option-index="0" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 text-black" placeholder="Option 1" required>
                   </div>
                   <div class="flex items-center gap-2">
                     <input type="radio" name="correctOption" value="1" class="h-4 w-4 text-blue-600 focus:ring-blue-500" required>
-                    <input type="text" data-option-index="1" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2" placeholder="Option 2" required>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <input type="radio" name="correctOption" value="2" class="h-4 w-4 text-blue-600 focus:ring-blue-500" required>
-                    <input type="text" data-option-index="2" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2" placeholder="Option 3" required>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <input type="radio" name="correctOption" value="3" class="h-4 w-4 text-blue-600 focus:ring-blue-500" required>
-                    <input type="text" data-option-index="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2" placeholder="Option 4" required>
+                    <input type="text" data-option-index="1" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 text-black" placeholder="Option 2" required>
                   </div>
                 </div>
+                <div class="flex gap-2 mt-2">
+                  <button type="button" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md text-white addOptionBtn">Ajouter une option</button>
+                  <button type="button" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md text-white removeOptionBtn">Supprimer une option</button>
+                </div>
               </div>
+
+              <!-- Direct Answer Field -->
+              <div name="correctAnswerField" class="hidden">
+                <label class="block text-sm font-medium">Correct Answer</label>
 
 
               <!-- Direct Answer Field -->
