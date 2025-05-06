@@ -11,7 +11,7 @@
     <aside class="sidebar">
       <div class="profile">
         <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Professeur">
-        <h2 id="name"></h2>
+        <h2 id="name">{{userName}}</h2>
       </div>
       <nav>
         <ul>
@@ -44,12 +44,7 @@
  
   <script>
     // Get user name from localStorage
-    const userName = localStorage.getItem("name") || "Utilisateur";
     const roleTitle = document.getElementById("name");
-   
-    if (roleTitle) {
-      roleTitle.textContent = userName;
-    }
 
     // Click events
     document.getElementById("createExamCard").addEventListener("click", function() {
