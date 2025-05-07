@@ -52,7 +52,7 @@
         <label class="block text-sm font-medium">Type</label>
         <select name="questionType" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" onchange="toggleOptions(this)" required>
           <option value="direct-answer">Réponse directe</option>
-          <option value="multiple">Choix multiple</option>
+          <option value="multiple-choice">Choix multiple</option>
         </select>
       </div>
 
@@ -101,7 +101,7 @@
       const text = block.querySelector('input[name="questionText"]').value;
       const type = block.querySelector('select[name="questionType"]').value;
 
-      if (type === "multiple") {
+      if (type === "multiple-choice") {
         const optionDivs = block.querySelectorAll(".optionsContainer > div");
         const options = Array.from(optionDivs).map(div => div.querySelector('input[type="text"]').value);
         const correctIndex = Array.from(optionDivs).findIndex(div => div.querySelector('input[type="radio"]').checked);
@@ -154,10 +154,10 @@
     const textCorrectAnswer = block.querySelector('[name="textCorrectAnswer"]');
     const optionsContainer = block.querySelector('.optionsContainer');
 
-    if (data.text) questionInput.value = data.text;
-    if (data.type) typeSelect.value = data.type;
+    if (data.question_text) questionInput.value = data.question_text;
+    if (data.question_type) typeSelect.value = data.question_type;
 
-    if (data.type === "multiple") {
+    if (data.question_type === "multiple-choice") {
       mcOptions.classList.remove("hidden");
       textCorrectAnswer.classList.add("hidden");
 
@@ -167,15 +167,15 @@
         const div = document.createElement("div");
         div.className = "flex items-center gap-2";
         div.innerHTML = `
-          <input type="radio" name="correctOption" value="${i}" class="h-4 w-4 text-blue-600 focus:ring-blue-500" ${opt === data.correctAnswer ? "checked" : ""} required />
-          <input type="text" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Option ${i + 1}" value="${opt}" required />
+          <input type="radio" name="correctOption" value="${i}" class="h-4 w-4 text-blue-600 focus:ring-blue-500" ${opt.is_correct ? "checked" : ""} required />
+          <input type="text" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Option ${i + 1}" value="${opt.text}" required />
         `;
         optionsContainer.appendChild(div);
       });
-    } else if (data.type === "direct-answer") {
+    } else if (data.question_type === "direct-answer") {
       mcOptions.classList.add("hidden");
       textCorrectAnswer.classList.remove("hidden");
-      textCorrectAnswer.querySelector('input[name="correctAnswer"]').value = data.correctAnswer || "";
+      textCorrectAnswer.querySelector('input[name="correctAnswer"]').value = data.correct_answer || "";
 
       // Remove the `required` attribute from hidden radio buttons
       const radios = mcOptions.querySelectorAll('input[name="correctOption"]');
@@ -212,7 +212,7 @@
     const textCorrectAnswer = select.closest(".question-block").querySelector('[name="textCorrectAnswer"]');
     const radios = mcOptions.querySelectorAll('input[name="correctOption"]');
 
-    if (select.value === "multiple") {
+    if (select.value === "multiple-choice") {
       mcOptions.classList.remove("hidden");
       textCorrectAnswer.classList.add("hidden");
 

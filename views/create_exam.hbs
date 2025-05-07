@@ -212,6 +212,7 @@
     questionForm.reset();
     document.querySelector('[name="mcOptions"]').classList.add("hidden");
     document.querySelector('[name="correctAnswerField"]').classList.add("hidden");
+    questionForm.question_type.value = "";
   });
 
   questionForm.question_type.addEventListener("change", (e) => {

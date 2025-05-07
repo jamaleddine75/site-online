@@ -308,6 +308,22 @@ exports.get_exams = (req, res) => {
 exports.update_exam = (req, res) => {
   const examId = req.params.id;
   const { title, description, time_limit, questions } = req.body;
+  const token = req.cookies.jwt;
+  if (!token) {
+    console.error("JWT token is missing");
+    return res
+      .status(401)
+      .json({ error: "Unauthorized: JWT token is missing" });
+  }
+  // Decode the token to get the user email
+  let userId;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    userId = decoded.id;
+  } catch (err) {
+    console.error("Error verifying token:", err);
+    return res.status(401).json({ error: "Invalid token" });
+  }
 
   // First, update the exam info
   const updateExamSql =
@@ -321,7 +337,7 @@ exports.update_exam = (req, res) => {
     // Ensure the user owns the exam
     db.query(
       "SELECT * FROM exams WHERE id = ? AND created_by = ?",
-      [examId, userEmail],
+      [examId, userId],
       (err, results) => {
         if (err) {
           console.error("Error verifying ownership:", err);
@@ -387,8 +403,8 @@ exports.update_exam = (req, res) => {
                           "INSERT INTO questions (exam_id, question_text, question_type, points, position) VALUES (?, ?, ?, ?, ?)",
                           [
                             examId,
-                            q.question_text,
-                            q.question_type,
+                            q.text,
+                            q.type,
                             q.points,
                             q.position,
                           ],
