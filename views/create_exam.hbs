@@ -293,7 +293,7 @@
       const data = await response.json();
       if (response.ok) {
          
-        examLinkInput.value = `${window.location.origin}/exam/${data.examId}`;
+        examLinkInput.value = `${window.location.origin}/takeexam/${data.examId}`;
         shareModal.classList.remove("hidden");
       } else {
         alert(data.error || "Error creating exam.");

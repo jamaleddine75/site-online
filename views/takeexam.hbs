@@ -1,52 +1,75 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Take Exam</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100">
 
-  <div class="max-w-4xl mx-auto py-8">
-    <div class="bg-white p-6 rounded shadow">
-      <h1 id="exam-title" class="text-2xl font-bold mb-2">Loading...</h1>
-      <p id="exam-description" class="text-gray-600 mb-6"></p>
+  <script>
+    tailwind = {
+      config: {
+        darkMode: 'class'
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+
+  <!-- Navbar -->
+  <nav class="bg-white dark:bg-gray-800 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16 items-center">
+        <span class="text-xl font-semibold text-gray-800 dark:text-white">Exam Portal</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-4xl mx-auto py-8 px-4">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+      <h1 id="exam-title" class="text-3xl font-bold mb-2">Loading...</h1>
+      <p id="exam-description" class="text-gray-600 dark:text-gray-400 mb-6"></p>
 
       <div id="questions-container" class="space-y-8"></div>
 
-      <button id="submit-button" class="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Submit Exam</button>
+      <button id="submit-button" class="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        Submit Exam
+      </button>
     </div>
-  </div>
+  </main>
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const pathParts = window.location.pathname.split('/');
       const examId = pathParts[pathParts.length - 1];
 
-      if (!examId || isNaN(examId)) {
+      if (!examId) {
         alert('Invalid exam link.');
         return;
       }
 
       try {
-        const res = await fetch(`http://localhost:3002/exam/${examId}`);
+        // Fetch exam details from the backend
+        const res = await fetch(`http://localhost:3002/auth/takeexam/${examId}`); // Corrected endpoint
         if (!res.ok) throw new Error('Failed to fetch exam.');
-        
+
         const exam = await res.json();
 
+        // Update the page with exam details
         document.getElementById('exam-title').textContent = exam.title;
         document.getElementById('exam-description').textContent = exam.description;
 
+        // Render questions dynamically
         const container = document.getElementById('questions-container');
         exam.questions.forEach((q, index) => {
           const div = document.createElement('div');
           div.innerHTML = `
-            <h2 class="font-semibold text-lg mb-2">${index + 1}. ${q.question_text}</h2>
+            <h2 class="font-semibold text-xl mb-2">${index + 1}. ${q.question_text}</h2>
             <div class="space-y-2">
               ${q.options.map(opt => `
                 <label class="block">
-                  <input type="radio" name="question-${q.id}" value="${opt.id}" class="mr-2" />
+                  <input type="radio" name="question-${q.id}" value="${opt.id}" class="mr-2 text-blue-600" />
                   ${opt.text}
                 </label>
               `).join('')}
