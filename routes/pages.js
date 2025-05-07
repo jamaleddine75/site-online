@@ -12,8 +12,6 @@ router.get("/registre", (req, res) => {
   res.render("register");
 });
 
-
-
 router.get("/home", (req, res) => {
   const token = req.cookies.jwt;
   if (!token) {
@@ -50,6 +48,12 @@ router.get("/create_exam", (req, res) => {
 router.get("/modifierexam/:id", (req, res) => {
   const examId = req.params.id; // Get the exam ID from the URL
   res.render("modifierexam", { examId }); // Pass the exam ID to the template
+});
+
+router.get("/takeexam/:examId", (req, res) => {
+  const examId = req.params.examId;
+  // Fetch exam details and render the takeexam.hbs page
+  res.render("takeexam", { examId });
 });
 
 module.exports = router;

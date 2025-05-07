@@ -25,34 +25,32 @@
 </section>
 
   <script>
-    const btn = document.getElementById('startBtn');
+    const startBtn = document.getElementById('startBtn');
     const input = document.getElementById('examLink');
     const errorMsg = document.getElementById('errorMsg');
 
-    btn.addEventListener('click', () => {
+    startBtn.addEventListener('click', () => {
       const link = input.value.trim();
       errorMsg.textContent = '';
 
       if (!link) {
-        errorMsg.textContent = 'يرجى إدخال الرابط أو الكود أولاً.';
+        errorMsg.textContent = 'Please enter the link or code first.';
         return;
       }
 
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          pos => {
-            // إرسال الإحداثيات للخادم لو احتجت:
-            // pos.coords.latitude , pos.coords.longitude
-            // ثم إعادة التوجيه:
-            window.location.href = link;
-          },
-          err => {
-            errorMsg.textContent =  'Lemplacement na pas pu être trouvé ; Essayer à nouveau.';
-          }
-        );
-      } else {
+      // Redirect to the exam page
+      if (link.startsWith('http')) {
         window.location.href = link;
+      } else {
+        window.location.href = `/takeexam/${link}`;
       }
+    });
+
+    document.querySelectorAll('.start-exam-btn').forEach(button => {
+      button.addEventListener('click', function() {
+        const examId = this.getAttribute('data-id');
+        window.location.href = `/takeexam/${examId}`;
+      });
     });
   </script>
 </body>

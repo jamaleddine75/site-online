@@ -113,6 +113,14 @@
                 <input type="number" name="questionPoints" min="1" value="1" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm" required>
               </div>
 
+              <div>
+                <label class="block text-sm font-medium">Timer (seconds)</label>
+                <div class="flex items-center gap-2">
+                  <input type="number" name="question_timer" min="0" value="30" class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm" placeholder="Enter time in seconds">
+                  
+                </div>
+              </div>
+
               <!-- Add Question Button -->
               <button id="addQuestionBtn" type="button" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
                 Add Question
@@ -163,6 +171,7 @@
     const question_text = questionForm.question_text.value.trim();
     const question_type = questionForm.question_type.value;
     const points = parseInt(questionForm.questionPoints.value);
+    const timer = parseInt(questionForm.question_timer.value);
 
     if (!question_text) {
       alert("Question text is required.");
@@ -174,10 +183,16 @@
       return;
     }
 
+    if (isNaN(timer) || timer < 0) {
+      alert("Please enter a valid timer value (0 or more seconds).");
+      return;
+    }
+
     let questionData = {
       question_text,
       question_type,
       points,
+      timer, // Ensure the timer value is added here
       position: questionIndex++
     };
 
@@ -207,6 +222,7 @@
     }
 
     questions.push(questionData);
+    console.log(questions); // Debugging: Check if the timer is being added
     questionsCount.textContent = questions.length;
     renderQuestions();
     questionForm.reset();
@@ -244,6 +260,7 @@
       <div class="mb-2 p-2 border dark:border-gray-600 rounded">
         <p><strong>Q${i + 1}:</strong> ${q.question_text} (${q.points} pt)</p>
         <p class="text-sm text-gray-500">${q.question_type}</p>
+        <p class="text-sm text-gray-500">Timer: ${q.timer} seconds</p> <!-- Ensure this line is present -->
       </div>
     `).join('');
   }
@@ -275,6 +292,7 @@
 
       const data = await response.json();
       if (response.ok) {
+         
         examLinkInput.value = `${window.location.origin}/exam/${data.examId}`;
         shareModal.classList.remove("hidden");
       } else {
