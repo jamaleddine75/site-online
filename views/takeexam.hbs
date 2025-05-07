@@ -82,6 +82,22 @@
         alert('Error loading exam.');
       }
     });
+
+    function renderQuestions() {
+      if (questions.length === 0) {
+        questionsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 py-4">No questions added yet.</p>';
+        return;
+      }
+
+      questionsList.innerHTML = questions.map((q, i) => `
+        <div class="mb-2 p-2 border dark:border-gray-600 rounded">
+          <p><strong>Q${i + 1}:</strong> ${q.question_text} (${q.points} pt)</p>
+          <p class="text-sm text-gray-500">${q.question_type}</p>
+          <p class="text-sm text-gray-500">Timer: ${q.timer} seconds</p>
+          ${q.mediaUrl ? `<img src="${q.mediaUrl}" alt="Question Media" class="mt-2 max-w-full h-auto">` : ""}
+        </div>
+      `).join('');
+    }
   </script>
 
 </body>
