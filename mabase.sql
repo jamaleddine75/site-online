@@ -26,6 +26,7 @@ CREATE TABLE `questions` (
   `question_type` VARCHAR(20) NOT NULL,
   `points` INT(11) NOT NULL,
   `position` INT(11) NOT NULL,
+  `mediaUrl` VARCHAR(50) DEFAULT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`exam_id`) REFERENCES `exams`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

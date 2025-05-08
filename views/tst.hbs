@@ -14,27 +14,54 @@
   <div class="w-full max-w-2xl p-8 bg-slate-900 border border-slate-700 shadow-xl rounded-lg">
     <div class="space-y-6">
       <div class="flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-white" id="exam-title">Loading...</h1>
+        <h1 class="text-2xl font-bold text-white" id="exam-title">Sample Exam</h1>
         <div class="flex items-center bg-slate-800 px-3 py-1 rounded-full">
           <i data-lucide="timer" class="text-purple-400 mr-2 w-4 h-4"></i>
-          <span class="font-mono text-slate-300" id="timer">--</span>
+          <span class="font-mono text-slate-300" id="timer">10s</span>
         </div>
       </div>
       
       <div class="h-2 bg-slate-800 rounded">
-        <div class="h-full bg-purple-500 rounded" id="progress-bar" style="width: 0%"></div>
+        <div class="h-full bg-purple-500 rounded" id="progress-bar" style="width: 33.33%"></div>
       </div>
 
       <div class="bg-slate-800 p-4 rounded-lg">
-        <h2 class="text-xl text-white mb-4" id="question-counter">Loading...</h2>
-        <p class="text-slate-300 text-lg mb-6" id="question-text">Loading...</p>
-        <div class="space-y-3" id="qcm-options"></div>
+        <h2 class="text-xl text-white mb-4" id="question-counter">
+          Question 1 of 3
+        </h2>
+        
+        <p class="text-slate-300 text-lg mb-6" id="question-text">What is 2 + 2?</p>
+        
+        <div class="space-y-3" id="qcm-options">
+          <label class="block p-3 rounded-lg border cursor-pointer transition-colors bg-slate-700 border-slate-600 hover:border-slate-500">
+            <div class="flex items-center">
+              <input type="radio" name="question-1" value="1" class="sr-only">
+              <div class="w-4 h-4 mr-3 rounded-full flex items-center justify-center border border-slate-400"></div>
+              <span class="text-slate-200">3</span>
+            </div>
+          </label>
+          <label class="block p-3 rounded-lg border cursor-pointer transition-colors bg-slate-700 border-slate-600 hover:border-slate-500">
+            <div class="flex items-center">
+              <input type="radio" name="question-1" value="2" class="sr-only">
+              <div class="w-4 h-4 mr-3 rounded-full flex items-center justify-center border border-slate-400"></div>
+              <span class="text-slate-200">4</span>
+            </div>
+          </label>
+          <label class="block p-3 rounded-lg border cursor-pointer transition-colors bg-slate-700 border-slate-600 hover:border-slate-500">
+            <div class="flex items-center">
+              <input type="radio" name="question-1" value="3" class="sr-only">
+              <div class="w-4 h-4 mr-3 rounded-full flex items-center justify-center border border-slate-400"></div>
+              <span class="text-slate-200">5</span>
+            </div>
+          </label>
+        </div>
       </div>
       
       <div class="flex justify-between">
         <button class="px-4 py-2 border border-slate-700 text-slate-400 rounded-md opacity-50 cursor-not-allowed" id="prev-btn" disabled>
           Previous
         </button>
+        
         <button class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md flex items-center gap-2" id="next-btn">
           Next Question
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
@@ -46,17 +73,16 @@
   <script>
     // Initialize Lucide icons
     lucide.createIcons();
+    
+    // Mock exam data
+    const exam = {
+ };
 
-    // Variables
     let currentQuestionIndex = 0;
-    let timeLeft = 0;
+    let timeLeft = exam.questions[0].timer;
     let answers = {};
     let timerInterval;
-    let exam = {
-      title: "Loading Exam...",
-      questions: []
-    };
-
+    
     // DOM elements
     const examTitleEl = document.getElementById('exam-title');
     const timerEl = document.getElementById('timer');
@@ -66,80 +92,31 @@
     const qcmOptionsEl = document.getElementById('qcm-options');
     const prevBtnEl = document.getElementById('prev-btn');
     const nextBtnEl = document.getElementById('next-btn');
-
-    // Fetch exam data from the backend
-    async function fetchExam() {
-      const examId = window.location.pathname.split('/').pop(); // Get exam ID from the URL path
-      if (!examId) {
-        alert('Exam ID is missing in the URL.');
-        return;
-      }
-
-      try {
-        // Fetch exam details from the backend
-        const res = await fetch(`http://localhost:3002/auth/takeexam/${examId}`);
-        if (!res.ok) throw new Error('Failed to fetch exam.');
-
-        exam = await res.json();
-        if (!exam.questions || exam.questions.length === 0) {
-          throw new Error('No questions found in this exam.');
-        }
-        
-        initializeExam();
-        
-      } catch (error) {
-        console.error('Error fetching exam:', error);
-        alert('Error loading the exam. Please try again later.');
-        // You might want to redirect or show an error message here
-        document.body.innerHTML = `
-          <div class="min-h-screen bg-slate-800 flex items-center justify-center">
-            <div class="w-full max-w-2xl p-8 bg-slate-900 border border-slate-700 shadow-xl rounded-lg text-center">
-              <h1 class="text-2xl font-bold text-white mb-4">Exam Loading Failed</h1>
-              <p class="text-slate-300 mb-6">${error.message}</p>
-              <a href="/" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md inline-block">
-                Return Home
-              </a>
-            </div>
-          </div>
-        `;
-      }
-    }
-
-    // Initialize the exam
-    function initializeExam() {
-      if (!exam || !exam.questions || exam.questions.length === 0) {
-        alert('No questions available for this exam.');
-        return;
-      }
-
-      examTitleEl.textContent = exam.title;
-      updateQuestionUI();
-      startTimer();
-    }
-   
-    // Update the UI with the current question
+    
+    // Update the UI with current question
     function updateQuestionUI() {
       const currentQuestion = exam.questions[currentQuestionIndex];
-
+      
+      examTitleEl.textContent = exam.title;
       questionCounterEl.textContent = `Question ${currentQuestionIndex + 1} of ${exam.questions.length}`;
       questionTextEl.textContent = currentQuestion.question_text;
-      progressBarEl.style.width = `${((currentQuestionIndex + 1) / exam.questions.length) * 100}%`;
-
-      // Update timer
-      timeLeft = currentQuestion.timer || 30; // Default to 30 seconds if timer not set
+      progressBarEl.style.width = `${(currentQuestionIndex + 1) / exam.questions.length * 100}%`;
+      
+      // Update timer display
+      timeLeft = currentQuestion.timer;
       updateTimerDisplay();
-
-      // Render question options
+      
+      // Update question type UI
       if (currentQuestion.type === 'qcm') {
-        qcmOptionsEl.innerHTML = ''; // Clear previous options
+        qcmOptionsEl.innerHTML = '';
         currentQuestion.options.forEach(option => {
           const isChecked = answers[currentQuestion.id] === option.id.toString();
-
+          
           const optionEl = document.createElement('label');
           optionEl.className = `block p-3 rounded-lg border cursor-pointer transition-colors ${
             isChecked ? 'bg-purple-600/20 border-purple-500' : 'bg-slate-700 border-slate-600 hover:border-slate-500'
           }`;
-
+          
           optionEl.innerHTML = `
             <div class="flex items-center">
               <input
@@ -157,12 +134,11 @@
               <span class="text-slate-200">${option.text}</span>
             </div>
           `;
-
-          const radioInput = optionEl.querySelector('input');
-          radioInput.addEventListener('change', (e) => {
+          
+          optionEl.addEventListener('change', (e) => {
             answers[currentQuestion.id] = e.target.value;
           });
-
+          
           qcmOptionsEl.appendChild(optionEl);
         });
       } else {
@@ -174,22 +150,23 @@
             class="w-full p-3 bg-slate-700 border border-slate-600 rounded-md text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-purple-500"
           >${answers[currentQuestion.id] || ''}</textarea>
         `;
-
+        
         const textarea = document.getElementById(`answer-${currentQuestion.id}`);
         textarea.addEventListener('input', (e) => {
           answers[currentQuestion.id] = e.target.value;
         });
       }
-
+      
       // Update button states
       prevBtnEl.disabled = currentQuestionIndex === 0;
       nextBtnEl.innerHTML = currentQuestionIndex === exam.questions.length - 1 ? 
         'Finish Exam' : 
         `Next Question <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
-
+      
+      // Refresh Lucide icons
       lucide.createIcons();
     }
-
+    
     // Update timer display
     function updateTimerDisplay() {
       timerEl.textContent = `${timeLeft}s`;
@@ -201,45 +178,46 @@
         timerEl.classList.add('text-slate-300');
       }
     }
-
+    
     // Start the timer
     function startTimer() {
       clearInterval(timerInterval);
-
+      
       timerInterval = setInterval(() => {
         timeLeft--;
         updateTimerDisplay();
-
+        
         if (timeLeft <= 0) {
           handleNextQuestion();
         }
       }, 1000);
     }
-
+    
     // Handle next question
     function handleNextQuestion() {
       clearInterval(timerInterval);
-
+      
       if (currentQuestionIndex < exam.questions.length - 1) {
         currentQuestionIndex++;
         updateQuestionUI();
         startTimer();
       } else {
+        // Exam finished
         showExamFinished();
       }
     }
-
+    
     // Handle previous question
     function handlePreviousQuestion() {
       clearInterval(timerInterval);
-
+      
       if (currentQuestionIndex > 0) {
         currentQuestionIndex--;
         updateQuestionUI();
         startTimer();
       }
     }
-
+    
     // Show exam finished screen
     function showExamFinished() {
       document.body.innerHTML = `
@@ -256,20 +234,23 @@
           </div>
         </div>
       `;
-
+      
       lucide.createIcons();
-
+      
       document.getElementById('score-btn').addEventListener('click', () => {
         alert('In a real application, this would navigate to the score page with your results.');
+        // In a real app, you would redirect to a score page
+        // window.location.href = `/score/${exam.id}`;
       });
     }
-
+    
     // Event listeners
     prevBtnEl.addEventListener('click', handlePreviousQuestion);
     nextBtnEl.addEventListener('click', handleNextQuestion);
-
-    // Fetch and initialize the exam
-    fetchExam();
+    
+    // Initialize the app
+    updateQuestionUI();
+    startTimer();
   </script>
 </body>
 </html>
