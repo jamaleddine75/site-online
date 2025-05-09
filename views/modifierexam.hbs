@@ -51,12 +51,12 @@
 
       <div>
         <label class="block text-sm font-medium">Points</label>
-        <input type="number" name="points" min="1" value="1" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" placeholder="Points" required />
+        <input type="number" name="points" min="1" value="10" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" placeholder="Points" required />
       </div>
 
       <div>
         <label class="block text-sm font-medium">Timer (seconds)</label>
-        <input type="number" name="timer" min="0" value="0" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" placeholder="Timer (seconds)" required />
+        <input type="number" name="timer" min="30" value="30" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" placeholder="Timer (seconds)" required />
       </div>
 
       <div>
@@ -98,10 +98,9 @@
     const time_limit = parseInt(document.getElementById("time_limit").value);
 
     const questionBlocks = document.querySelectorAll(".question-block");
-    console.log("Number of question blocks found:", questionBlocks.length); // ADD THIS LOG
+    console.log("Number of question blocks found:", questionBlocks.length);
 
     const questionsData = [...questionBlocks].map((block) => {
-      console.log("Processing question block:", block); // ADD THIS LOG
       const questionInput = block.querySelector('input[name="questionText"]');
       const text = questionInput ? questionInput.value.trim() : null;
       const type = block.querySelector('select[name="questionType"]').value;
@@ -132,14 +131,14 @@
         return { question_text: text, question_type: type, timer: timer, points: points, options: options, id: questionId };
       } else if (type === "direct-answer") {
         const correctAnswerInput = block.querySelector('input[name="correctAnswer"]');
-        const correctAnswer = correctAnswerInput ? correctAnswerInput.value.trim() : null;
+        const correct_answer = correctAnswerInput ? correctAnswerInput.value.trim() : null;
 
-        if (!correctAnswer) {
+        if (!correct_answer) {
           alert("Please provide the correct answer for direct-answer questions.");
           throw new Error("Validation failed: Missing correct answer.");
         }
 
-        return { question_text: text, question_type: type, points: points, timer: timer, correct_answer: correctAnswer, id: questionId };
+        return { question_text: text, question_type: type, points: points, timer: timer, correct_answer: correct_answer, id: questionId };
       }
 
       return null;
@@ -151,6 +150,8 @@
       time_limit,
       questions: questionsData
     });
+    console.log("📤 Full data being sent to backend:");
+    console.log(JSON.stringify({ title, description, time_limit, questions: questionsData }, null, 2));
 
     await fetch(`/auth/exams/${examId}`, {
       method: "PUT",
@@ -289,5 +290,6 @@
 
   fetchExam();
 </script>
+
 </body>
 </html>
