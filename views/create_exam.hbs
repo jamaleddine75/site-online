@@ -243,7 +243,8 @@
           return;
         }
 
-        questionData.mediaUrl = uploadData.mediaUrl; // Add the media URL to the question data
+        questionData.mediaUrl = uploadData.mediaUrl; 
+            questionData.mediaType = uploadData.mediaType; 
       } catch (err) {
         alert("Error uploading media.");
         console.error(err);

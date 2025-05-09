@@ -44,6 +44,8 @@ db.connect((err) => {
 app.use("/", require("./routes/pages"));
 app.use("/auth", require("./routes/auth"));
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static('uploads'));
+
 // Création examen avec lien unique
 app.post("/create-exam", (req, res) => {
   const title = req.body.title;

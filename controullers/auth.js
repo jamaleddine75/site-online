@@ -143,8 +143,8 @@ exports.create_exam = (req, res) => {
           return new Promise((resolve, reject) => {
             // Insert question
             db.query(
-              "INSERT INTO questions (exam_id, question_text, question_type, points, position,timer,mediaUrl ) VALUES (?, ?, ?, ?, ?,?,?)",
-              [examId, q.question_text, q.question_type, q.points, q.position,q.timer, q.mediaUrl],
+              "INSERT INTO questions (exam_id, question_text, question_type, points, position,timer,mediaUrl,mediaType ) VALUES (?, ?, ?, ?, ?,?,?,?)",
+              [examId, q.question_text, q.question_type, q.points, q.position,q.timer, q.mediaUrl,q.mediaType],
               (err, questionResult) => {
                 if (err) return reject(err);
 

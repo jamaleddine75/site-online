@@ -1,276 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Take Exam</title>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Exam</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-slate-800 flex items-center justify-center p-4">
-  <div class="w-full max-w-2xl p-8 bg-slate-900 border border-slate-700 shadow-xl rounded-lg">
-    <div class="space-y-6">
-      <div class="flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-white" id="exam-title">Loading...</h1>
-        <div class="flex items-center bg-slate-800 px-3 py-1 rounded-full">
-          <i data-lucide="timer" class="text-purple-400 mr-2 w-4 h-4"></i>
-          <span class="font-mono text-slate-300" id="timer">--</span>
-        </div>
-      </div>
-
-      <div class="h-2 bg-slate-800 rounded">
-        <div class="h-full bg-purple-500 rounded" id="progress-bar" style="width: 0%"></div>
-      </div>
-
-      <div class="bg-slate-800 p-4 rounded-lg">
-        <h2 class="text-xl text-white mb-4" id="question-counter">Loading...</h2>
-        <p class="text-slate-300 text-lg mb-6" id="question-text">Loading...</p>
-        <div class="space-y-3" id="question-options"></div>
-      </div>
-
-      <div class="flex justify-between">
-        <button class="px-4 py-2 border border-slate-700 text-slate-400 rounded-md opacity-50 cursor-not-allowed" id="prev-btn" disabled>
-          Previous
-        </button>
-        <button class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md flex items-center gap-2" id="next-btn">
-          Next Question
-          <i data-lucide="arrow-right" class="w-4 h-4"></i>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-  // Initialize Lucide icons
-  lucide.createIcons();
-
-  // Variables
-  let currentQuestionIndex = 0;
-  let timeLeft = 0;
-  let answers = {};
-  let timerInterval;
-  let exam = {
-    title: "Loading Exam...",
-    questions: []
-  };
-
-  // DOM elements
-  const examTitleEl = document.getElementById('exam-title');
-  const timerEl = document.getElementById('timer');
-  const progressBarEl = document.getElementById('progress-bar');
-  const questionCounterEl = document.getElementById('question-counter');
-  const questionTextEl = document.getElementById('question-text');
-  const questionOptionsEl = document.getElementById('question-options');
-  const prevBtnEl = document.getElementById('prev-btn');
-  const nextBtnEl = document.getElementById('next-btn');
-
-  // Fetch exam data from the backend
-  async function fetchExam() {
-    const examId = window.location.pathname.split('/').pop();
-    if (!examId) {
-      alert('Exam ID is missing in the URL.');
-      return;
-    }
-
-    try {
-      const res = await fetch(`http://localhost:3002/auth/takeexam/${examId}`);
-      if (!res.ok) throw new Error('Failed to fetch exam.');
-
-      exam = await res.json();
-      if (!exam.questions || exam.questions.length === 0) {
-        throw new Error('No questions found in this exam.');
-      }
-
-      initializeExam();
-    } catch (error) {
-      console.error('Error:', error);
-      showErrorPage(error.message);
-    }
-  }
-
-  function showErrorPage(message) {
-    document.body.innerHTML = `
-      <div class="min-h-screen bg-slate-800 flex items-center justify-center">
-        <div class="w-full max-w-2xl p-8 bg-slate-900 border border-slate-700 shadow-xl rounded-lg text-center">
-          <h1 class="text-2xl font-bold text-white mb-4">Error Loading Exam</h1>
-          <p class="text-slate-300 mb-6">${message}</p>
-          <a href="/" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md inline-block">
-            Return Home
-          </a>
-        </div>
-      </div>
-    `;
-  }
-
-  function initializeExam() {
-    if (!exam.questions.length) {
-      showErrorPage('No questions available for this exam.');
-      return;
-    }
-
-    examTitleEl.textContent = exam.title;
-    updateQuestionUI();
-    startTimer();
-  }
-
-  function updateQuestionUI() {
-    const currentQuestion = exam.questions[currentQuestionIndex];
-    questionCounterEl.textContent = `Question ${currentQuestionIndex + 1} of ${exam.questions.length}`;
-    questionTextEl.textContent = currentQuestion.question_text;
-    progressBarEl.style.width = `${((currentQuestionIndex + 1) / exam.questions.length) * 100}%`;
-
-    // Set timer (default to 30 seconds if not specified)
-    timeLeft = currentQuestion.timer || 30;
-    updateTimerDisplay();
-
-    // Clear previous options
-    questionOptionsEl.innerHTML = '';
-
-    // Handle multiple-choice questions
-    if (currentQuestion.question_type === 'multiple-choice' && currentQuestion.options && currentQuestion.options.length) {
-      currentQuestion.options.forEach(option => {
-        const isChecked = answers[currentQuestion.id] === option.id.toString();
-
-        const optionEl = document.createElement('label');
-        optionEl.className = `block p-3 rounded-lg border cursor-pointer transition-colors ${
-          isChecked ? 'bg-purple-600/20 border-purple-500' : 'bg-slate-700 border-slate-600 hover:border-slate-500'
-        }`;
-
-        optionEl.innerHTML = `
-          <div class="flex items-center">
-            <input
-              type="radio"
-              name="question-${currentQuestion.id}"
-              value="${option.id}"
-              ${isChecked ? 'checked' : ''}
-              class="sr-only"
-            />
-            <div class="w-4 h-4 mr-3 rounded-full flex items-center justify-center radio-circle ${
-              isChecked ? 'bg-purple-500' : 'border border-slate-400'
-            }">
-              ${isChecked ? '<div class="w-2 h-2 rounded-full bg-white"></div>' : ''}
+    <div class="w-full max-w-2xl p-8 bg-slate-900 border border-slate-700 shadow-xl rounded-lg">
+        <div class="space-y-6">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-white" id="exam-title">Loading...</h1>
+                <div class="flex items-center bg-slate-800 px-3 py-1 rounded-full">
+                    <i data-lucide="timer" class="text-purple-400 mr-2 w-4 h-4"></i>
+                    <span class="font-mono text-slate-300" id="timer">--</span>
+                </div>
             </div>
-            <span class="text-slate-200">${option.text}</span>
-          </div>
-        `;
 
-        const radioInput = optionEl.querySelector('input');
-        const radioCircle = optionEl.querySelector('.radio-circle'); // Select the circle
+            <div class="h-2 bg-slate-800 rounded">
+                <div class="h-full bg-purple-500 rounded" id="progress-bar" style="width: 0%"></div>
+            </div>
 
-        radioInput.addEventListener('change', (e) => {
-          answers[currentQuestion.id] = e.target.value;
-          // Add the visual effect here
-          questionOptionsEl.querySelectorAll('label').forEach(label => {
-            label.classList.remove('bg-purple-600/20', 'border-purple-500');
-            const circle = label.querySelector('.radio-circle');
-            if (circle) {
-              circle.classList.remove('bg-purple-500', 'border-purple-500');
-              circle.classList.add('border-slate-400');
-              circle.innerHTML = '';
-            }
-          });
-          optionEl.classList.add('bg-purple-600/20', 'border-purple-500');
-          radioCircle.classList.remove('border-slate-400');
-          radioCircle.classList.add('bg-purple-500');
-          radioCircle.innerHTML = '<div class="w-2 h-2 rounded-full bg-white"></div>';
-        });
+            <div class="bg-slate-800 p-4 rounded-lg">
+                <h2 class="text-xl text-white mb-4" id="question-counter">Loading...</h2>
+                <div id="media-container" class="mb-4"></div>
+                <p class="text-slate-300 text-lg mb-6" id="question-text">Loading...</p>
+                <div class="space-y-3" id="question-options"></div>
+            </div>
 
-        questionOptionsEl.appendChild(optionEl);
-      });
-    }
-    // Handle direct-answer (text) questions
-    else if (currentQuestion.question_type === 'direct-answer') {
-      questionOptionsEl.innerHTML = `
-        <textarea
-          id="answer-${currentQuestion.id}"
-          rows="4"
-          placeholder="Enter your answer here..."
-          class="w-full p-3 bg-slate-700 border border-slate-600 rounded-md text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-purple-500"
-        >${answers[currentQuestion.id] || ''}</textarea>
-      `;
-
-      const textarea = document.getElementById(`answer-${currentQuestion.id}`);
-      textarea.addEventListener('input', (e) => {
-        answers[currentQuestion.id] = e.target.value;
-      });
-    } else {
-      console.warn(`Unknown question type: ${currentQuestion.question_type}`);
-      questionOptionsEl.innerHTML = '<p class="text-yellow-400">This question type is not supported.</p>';
-    }
-
-    // Update navigation buttons
-    prevBtnEl.disabled = currentQuestionIndex === 0;
-    nextBtnEl.innerHTML = currentQuestionIndex === exam.questions.length - 1 ?
-      'Finish Exam' :
-      `Next Question <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
-
-    // Refresh icons
-    lucide.createIcons();
-  }
-
-  function updateTimerDisplay() {
-    timerEl.textContent = `${timeLeft}s`;
-    timerEl.className = `font-mono ${timeLeft <= 5 ? 'text-red-400' : 'text-slate-300'}`;
-  }
-
-  function startTimer() {
-    clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-      timeLeft--;
-      updateTimerDisplay();
-      if (timeLeft <= 0) handleNextQuestion();
-    }, 1000);
-  }
-
-  function handleNextQuestion() {
-    clearInterval(timerInterval);
-    if (currentQuestionIndex < exam.questions.length - 1) {
-      currentQuestionIndex++;
-      updateQuestionUI();
-      startTimer();
-    } else {
-      showExamFinished();
-    }
-  }
-
-  function handlePreviousQuestion() {
-    clearInterval(timerInterval);
-    if (currentQuestionIndex > 0) {
-      currentQuestionIndex--;
-      updateQuestionUI();
-      startTimer();
-    }
-  }
-
-  function showExamFinished() {
-    document.body.innerHTML = `
-      <div class="min-h-screen bg-slate-800 flex items-center justify-center">
-        <div class="w-full max-w-2xl p-8 bg-slate-900 border border-slate-700 shadow-xl rounded-lg text-center">
-          <h1 class="text-2xl font-bold text-white mb-4">Exam Finished</h1>
-          <p class="text-slate-400 mb-6">You have completed all questions.</p>
-          <button class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md flex items-center gap-2 mx-auto" id="score-btn">
-            <i data-lucide="award" class="w-5 h-5"></i>
-            View Results
-          </button>
+            <div class="flex justify-between">
+                <button class="px-4 py-2 border border-slate-700 text-slate-400 rounded-md opacity-50 cursor-not-allowed" id="prev-btn" disabled>
+                    Previous
+                </button>
+                <button class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md flex items-center gap-2" id="next-btn">
+                    Next Question
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </div>
         </div>
-      </div>
-    `;
+    </div>
 
-    lucide.createIcons();
-    document.getElementById('score-btn').addEventListener('click', () => {
-      console.log('User answers:', answers);
-      alert('Exam submitted! Answers: ' + JSON.stringify(answers));
-      // In a real application, you would send these answers to the backend for grading.
-      // You might also redirect the user to a results page.
+    <script>
+        lucide.createIcons();
+
+        let currentQuestionIndex = 0;
+        let timeLeft = 0;
+        let answers = {};
+        let timerInterval;
+        let exam = {
+            title: "Loading Exam...",
+            questions: []
+        };
+
+        const examTitleEl = document.getElementById('exam-title');
+        const timerEl = document.getElementById('timer');
+        const progressBarEl = document.getElementById('progress-bar');
+        const questionCounterEl = document.getElementById('question-counter');
+        const questionTextEl = document.getElementById('question-text');
+        const questionOptionsEl = document.getElementById('question-options');
+        const prevBtnEl = document.getElementById('prev-btn');
+        const nextBtnEl = document.getElementById('next-btn');
+        const mediaContainerEl = document.getElementById('media-container');
+
+        async function fetchExam() {
+            const examId = window.location.pathname.split('/').pop();
+            if (!examId) {
+                alert('Exam ID is missing in the URL.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`http://localhost:3002/auth/takeexam/${examId}`);
+                if (!res.ok) throw new Error('Failed to fetch exam.');
+                exam = await res.json();
+                if (!exam.questions || exam.questions.length === 0) {
+                    throw new Error('No questions found in this exam.');
+                }
+                initializeExam();
+            } catch (error) {
+                console.error('Error:', error);
+                showErrorPage(error.message);
+            }
+        }
+
+        function showErrorPage(message) {
+            document.body.innerHTML = `
+                <div class="min-h-screen bg-slate-800 flex items-center justify-center">
+                    <div class="w-full max-w-2xl p-8 bg-slate-900 border border-slate-700 shadow-xl rounded-lg text-center">
+                        <h1 class="text-2xl font-bold text-white mb-4">Error Loading Exam</h1>
+                        <p class="text-slate-300 mb-6">${message}</p>
+                        <a href="/" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md inline-block">
+                            Return Home
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initializeExam() {
+            if (!exam.questions.length) {
+                showErrorPage('No questions available for this exam.');
+                return;
+            }
+            examTitleEl.textContent = exam.title;
+            updateQuestionUI();
+            startTimer();
+        }
+
+        function updateQuestionUI() {
+            const currentQuestion = exam.questions[currentQuestionIndex];
+            questionCounterEl.textContent = `Question ${currentQuestionIndex + 1} of ${exam.questions.length}`;
+            questionTextEl.textContent = currentQuestion.question_text;
+            progressBarEl.style.width = `${((currentQuestionIndex + 1) / exam.questions.length) * 100}%`;
+           mediaContainerEl.innerHTML = '';
+mediaContainerEl.innerHTML = '';
+if (currentQuestion.mediaUrl && currentQuestion.mediaType) {
+    const url = currentQuestion.mediaUrl;
+    const type = currentQuestion.mediaType;
+    let mediaElement;
+
+    if (type.startsWith('video/')) {
+        mediaElement = document.createElement('video');
+        mediaElement.controls = true;
+        mediaElement.className = 'w-full rounded-md mb-4';
+        const source = document.createElement('source');
+        source.src = url;
+        source.type = type;
+        mediaElement.appendChild(source);
+    } else if (type.startsWith('audio/')) {
+        mediaElement = document.createElement('audio');
+        mediaElement.controls = true;
+        mediaElement.className = 'w-full mb-4';
+        const source = document.createElement('source');
+        source.src = url;
+        source.type = type;
+        mediaElement.appendChild(source);
+    } else if (type.startsWith('image/')) {
+        mediaElement = document.createElement('img');
+        mediaElement.src = url;
+        mediaElement.alt = 'Question Media';
+        mediaElement.className = 'w-full rounded-md mb-4';
+    } else {
+        mediaElement = document.createElement('p');
+        mediaElement.textContent = 'Unsupported media type.';
+        mediaElement.className = 'text-yellow-400';
+    }
+
+    mediaContainerEl.appendChild(mediaElement);
+}
+
+
+            timeLeft = currentQuestion.timer || 30;
+            updateTimerDisplay();
+            questionOptionsEl.innerHTML = '';
+
+            if (currentQuestion.question_type === 'multiple-choice' && currentQuestion.options && currentQuestion.options.length) {
+                currentQuestion.options.forEach(option => {
+                    const isChecked = answers[currentQuestion.id] === option.id.toString();
+                    const optionEl = document.createElement('label');
+                    optionEl.className = `block p-3 rounded-lg border cursor-pointer transition-colors ${isChecked ? 'bg-purple-600/20 border-purple-500' : 'bg-slate-700 border-slate-600 hover:border-slate-500'}`;
+                    optionEl.innerHTML = `
+                        <div class="flex items-center">
+                            <input type="radio" name="question-${currentQuestion.id}" value="${option.id}" ${isChecked ? 'checked' : ''} class="sr-only" />
+                            <div class="w-4 h-4 mr-3 rounded-full flex items-center justify-center radio-circle ${isChecked ? 'bg-purple-500' : 'border border-slate-400'}">
+                                ${isChecked ? '<div class="w-2 h-2 rounded-full bg-white"></div>' : ''}
+                            </div>
+                            <span class="text-slate-200">${option.text}</span>
+                        </div>
+                    `;
+                    const radioInput = optionEl.querySelector('input');
+                    const radioCircle = optionEl.querySelector('.radio-circle');
+                    radioInput.addEventListener('change', (e) => {
+                        answers[currentQuestion.id] = e.target.value;
+                        questionOptionsEl.querySelectorAll('label').forEach(label => {
+                            label.classList.remove('bg-purple-600/20', 'border-purple-500');
+                            const circle = label.querySelector('.radio-circle');
+                            if (circle) {
+                                circle.classList.remove('bg-purple-500', 'border-purple-500');
+                                circle.classList.add('border-slate-400');
+                                circle.innerHTML = '';
+                            }
+                        });
+                        optionEl.classList.add('bg-purple-600/20', 'border-purple-500');
+                        radioCircle.classList.remove('border-slate-400');
+                        radioCircle.classList.add('bg-purple-500');
+                        radioCircle.innerHTML = '<div class="w-2 h-2 rounded-full bg-white"></div>';
+                    });
+                    questionOptionsEl.appendChild(optionEl);
+                });
+            } else if (currentQuestion.question_type === 'direct-answer') {
+                questionOptionsEl.innerHTML = `
+                    <textarea id="answer-${currentQuestion.id}" rows="4" placeholder="Enter your answer here..."
+                        class="w-full p-3 bg-slate-700 border border-slate-600 rounded-md text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-purple-500"
+                    >${answers[currentQuestion.id] || ''}</textarea>
+                `;
+                const textarea = document.getElementById(`answer-${currentQuestion.id}`);
+                textarea.addEventListener('input', (e) => {
+                    answers[currentQuestion.id] = e.target.value;
+                });
+            } else {
+                console.warn(`Unknown question type: ${currentQuestion.question_type}`);
+                questionOptionsEl.innerHTML = '<p class="text-yellow-400">This question type is not supported.</p>';
+            }
+
+            prevBtnEl.disabled = currentQuestionIndex === 0;
+            nextBtnEl.innerHTML = currentQuestionIndex === exam.questions.length - 1 ?
+                'Finish Exam' :
+                `Next Question <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
+
+            lucide.createIcons();
+        }
+
+        function updateTimerDisplay() {
+            timerEl.textContent = `${timeLeft}s`;
+            timerEl.className = `font-mono ${timeLeft <= 5 ? 'text-red-400' : 'text-slate-300'}`;
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) handleNextQuestion();
+            }, 1000);
+        }
+
+        function handleNextQuestion() {
+            clearInterval(timerInterval);
+            if (currentQuestionIndex < exam.questions.length - 1) {
+                currentQuestionIndex++;
+                updateQuestionUI();
+                startTimer();
+            } else {
+                showExamFinished();
+            }
+        }
+
+        function handlePreviousQuestion() {
+            clearInterval(timerInterval);
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                updateQuestionUI();
+                startTimer();
+            }
+        }
+
+      function calculateScore() {
+    let totalEarnedPoints = 0;
+    let totalPossiblePoints = 0;
+
+    exam.questions.forEach(question => {
+        totalPossiblePoints += question.points || 1;
+        const userAnswer = answers[question.id];
+
+        if (userAnswer) {
+            if (question.question_type === 'multiple-choice') {
+                const correctOption = question.options.find(opt => opt.is_correct);
+                if (correctOption && userAnswer.toString() === correctOption.id.toString()) {
+                    totalEarnedPoints += question.points || 1;
+                }
+            } else if (question.question_type === 'direct-answer' && question.correct_answer) {
+                if (userAnswer.trim().toLowerCase() === question.correct_answer.trim().toLowerCase()) {
+                    totalEarnedPoints += question.points || 1;
+                }
+            }
+        }
     });
-  }
 
-  // Event listeners
-  prevBtnEl.addEventListener('click', handlePreviousQuestion);
-  nextBtnEl.addEventListener('click', handleNextQuestion);
+    if (totalPossiblePoints === 0) {
+        return 0;
+    }
 
-  // Start the exam
-  fetchExam();
-</script>
+    return (totalEarnedPoints / totalPossiblePoints) * 100;
+}
+
+        function showExamFinished() {
+            clearInterval(timerInterval);
+            const finalScorePercentage = calculateScore();
+            const finalScoreRounded = parseFloat(finalScorePercentage.toFixed(2));
+
+            document.body.innerHTML = `
+                <div class="min-h-screen bg-slate-800 flex items-center justify-center">
+                    <div class="w-full max-w-md p-8 bg-slate-900 border border-slate-700 shadow-xl rounded-lg text-center">
+                        <h1 class="text-2xl font-bold text-white mb-4">Exam Finished!</h1>
+                        <div class="text-slate-300 mb-6">
+                            <p class="text-lg">Your Score:</p>
+                            <p class="text-purple-400 font-semibold text-3xl">${finalScoreRounded} / 100</p>
+                        </div>
+                        <button class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md" onclick="window.location.href='/home'">
+                            Return Home
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            lucide.createIcons();
+        }
+
+        prevBtnEl.addEventListener('click', handlePreviousQuestion);
+        nextBtnEl.addEventListener('click', handleNextQuestion);
+
+        fetchExam();
+    </script>
 </body>
 </html>

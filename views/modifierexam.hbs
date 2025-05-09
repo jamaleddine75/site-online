@@ -32,7 +32,8 @@
         <input type="number" id="time_limit" name="duration" class="w-full rounded-md border-gray-700 bg-gray-800 text-white p-2" required />
       </div>
 
-      <div id="questionsContainer" class="space-y-6"></div>
+      <div id="questionsContainer" class="space-y-6">
+        </div>
 
       <div class="flex justify-between">
         <button type="button" onclick="addQuestion()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md text-white">Ajouter une question</button>
@@ -48,19 +49,16 @@
         <input type="text" name="questionText" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" required />
       </div>
 
-      <!-- Points Input -->
       <div>
         <label class="block text-sm font-medium">Points</label>
         <input type="number" name="points" min="1" value="1" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" placeholder="Points" required />
       </div>
 
-      <!-- Timer Input -->
       <div>
         <label class="block text-sm font-medium">Timer (seconds)</label>
         <input type="number" name="timer" min="0" value="0" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" placeholder="Timer (seconds)" required />
       </div>
 
-      <!-- Type Field (Moved Below Timer) -->
       <div>
         <label class="block text-sm font-medium">Type</label>
         <select name="questionType" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" onchange="toggleOptions(this)" required>
@@ -69,39 +67,27 @@
         </select>
       </div>
 
-      <!-- Correct Answer for Direct Answer -->
       <div name="textCorrectAnswer" class="space-y-2 hidden">
         <label class="block text-sm font-medium">Réponse correcte</label>
         <input type="text" name="correctAnswer" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Entrez la réponse correcte" />
       </div>
 
-      <!-- Multiple Choice Options -->
       <div name="mcOptions" class="space-y-2 hidden">
         <label class="block text-sm font-medium">Options (mark correct answer)</label>
         <div class="space-y-2 optionsContainer">
-          <div class="flex items-center gap-2">
-            <input type="radio" name="correctOption" value="0" required class="h-4 w-4 text-blue-600 focus:ring-blue-500" />
-            <input type="text" name="option1" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Option 1" required />
           </div>
-          <div class="flex items-center gap-2">
-            <input type="radio" name="correctOption" value="1" required class="h-4 w-4 text-blue-600 focus:ring-blue-500" />
-            <input type="text" name="option2" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Option 2" required />
-          </div>
-        </div>
         <div class="flex gap-2 mt-2">
           <button type="button" class="bg-blue-600 text-white px-2 py-1 rounded-md text-sm hover:bg-blue-700 addOptionBtn">Ajouter une option</button>
           <button type="button" class="bg-red-600 text-white px-2 py-1 rounded-md text-sm hover:bg-red-700 removeOptionBtn">Supprimer une option</button>
         </div>
       </div>
 
-      <!-- Remove Question Button -->
       <button type="button" onclick="removeQuestion(this)" class="bg-red-700 hover:bg-red-800 px-2 py-1 text-sm rounded-md text-white">Supprimer cette question</button>
     </div>
   </template>
 
 <script>
-  const examId = "{{examId}}"; // Make sure this is correctly rendered by your template engine
-
+  const examId = "{{examId}}";
   const questionsContainer = document.getElementById("questionsContainer");
 
   document.getElementById("examForm").addEventListener("submit", async function (e) {
@@ -111,34 +97,65 @@
     const description = document.getElementById("description").value;
     const time_limit = parseInt(document.getElementById("time_limit").value);
 
-    const questions = [...document.querySelectorAll(".question-block")].map((block) => {
-      const text = block.querySelector('input[name="questionText"]').value;
+    const questionBlocks = document.querySelectorAll(".question-block");
+    console.log("Number of question blocks found:", questionBlocks.length); // ADD THIS LOG
+
+    const questionsData = [...questionBlocks].map((block) => {
+      console.log("Processing question block:", block); // ADD THIS LOG
+      const questionInput = block.querySelector('input[name="questionText"]');
+      const text = questionInput ? questionInput.value.trim() : null;
       const type = block.querySelector('select[name="questionType"]').value;
-      const Points = block.querySelector('input[name="points"]').value || 0;
-      const timer = block.querySelector('input[name="timer"]').value || 0;
+      const points = parseInt(block.querySelector('input[name="points"]').value) || 1;
+      const timer = parseInt(block.querySelector('input[name="timer"]').value) || 0;
+      const questionId = block.dataset.questionId;
+
+      if (!text || !type) {
+        alert("Please fill in all required fields for each question.");
+        throw new Error("Validation failed: Missing required fields.");
+      }
 
       if (type === "multiple-choice") {
         const optionDivs = block.querySelectorAll(".optionsContainer > div");
-        const options = Array.from(optionDivs).map(div => div.querySelector('input[type="text"]').value);
-        const correctIndex = Array.from(optionDivs).findIndex(div => div.querySelector('input[type="radio"]').checked);
-        return { text, type, timer,Points,options, correctAnswer: options[correctIndex] };
-      } else if (type === "direct-answer") {
-        const correctAnswer = block.querySelector('input[name="correctAnswer"]').value;
-        return { text, type, Points,timer,correctAnswer };
-      }
-    });
+        const options = Array.from(optionDivs).map((div, index) => {
+          const optionText = div.querySelector('input[type="text"]').value.trim();
+          const isCorrect = div.querySelector('input[type="radio"]').checked;
+          const optionId = div.dataset.optionId;
 
-    console.log({
+          if (!optionText) {
+            alert("Please fill in all options for multiple-choice questions.");
+            throw new Error("Validation failed: Missing option text.");
+          }
+
+          return { text: optionText, is_correct: isCorrect, id: optionId };
+        });
+
+        return { question_text: text, question_type: type, timer: timer, points: points, options: options, id: questionId };
+      } else if (type === "direct-answer") {
+        const correctAnswerInput = block.querySelector('input[name="correctAnswer"]');
+        const correctAnswer = correctAnswerInput ? correctAnswerInput.value.trim() : null;
+
+        if (!correctAnswer) {
+          alert("Please provide the correct answer for direct-answer questions.");
+          throw new Error("Validation failed: Missing correct answer.");
+        }
+
+        return { question_text: text, question_type: type, points: points, timer: timer, correct_answer: correctAnswer, id: questionId };
+      }
+
+      return null;
+    }).filter(q => q !== null);
+
+    console.log("Data being sent:", {
       title,
       description,
       time_limit,
-      questions
+      questions: questionsData
     });
 
     await fetch(`/auth/exams/${examId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description, time_limit, questions })
+      body: JSON.stringify({ title, description, time_limit, questions: questionsData })
     }).then(async (response) => {
       if (!response.ok) {
         const error = await response.json();
@@ -168,7 +185,10 @@
       document.getElementById("description").value = exam.description;
       document.getElementById("time_limit").value = exam.time_limit;
 
-      exam.questions.forEach((q) => addQuestion(q));
+      if (exam.questions && exam.questions.length > 0) {
+        questionsContainer.innerHTML = '';
+        exam.questions.forEach(addQuestion);
+      }
     } catch (error) {
       console.error("Error fetching exam:", error);
       alert("Erreur lors du chargement de l’examen");
@@ -179,6 +199,9 @@
     const template = document.getElementById("questionTemplate");
     const clone = template.content.cloneNode(true);
     const block = clone.querySelector(".question-block");
+    const questionIdForName = data.id || Date.now();
+
+    block.dataset.questionId = questionIdForName;
 
     const questionInput = block.querySelector('input[name="questionText"]');
     const typeSelect = block.querySelector('select[name="questionType"]');
@@ -188,31 +211,28 @@
     const textCorrectAnswer = block.querySelector('[name="textCorrectAnswer"]');
     const optionsContainer = block.querySelector('.optionsContainer');
 
-    // Populate fields with existing data
     if (data.question_text) questionInput.value = data.question_text;
-    if (data.question_type) typeSelect.value = data.question_type;
+    if (data.question_type) {
+      typeSelect.value = data.question_type;
+      toggleOptions(typeSelect);
+    }
     if (data.points) pointsInput.value = data.points;
     if (data.timer) timerInput.value = data.timer;
 
-    if (data.question_type === "multiple-choice") {
-      mcOptions.classList.remove("hidden");
-      textCorrectAnswer.classList.add("hidden");
-
-      // Populate options
+    if (data.question_type === "multiple-choice" && data.options && data.options.length > 0) {
       optionsContainer.innerHTML = "";
       data.options.forEach((opt, i) => {
         const div = document.createElement("div");
         div.className = "flex items-center gap-2";
+        div.dataset.optionId = opt.id;
         div.innerHTML = `
-          <input type="radio" name="correctOption" value="${i}" class="h-4 w-4 text-blue-600 focus:ring-blue-500" ${opt.is_correct ? "checked" : ""} required />
-          <input type="text" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Option ${i + 1}" value="${opt.text}" required />
+          <input type="radio" name="correctOption-${questionIdForName}" value="${i}" class="h-4 w-4 text-blue-600 focus:ring-blue-500" ${opt.is_correct ? "checked" : ""} required />
+          <input type="text" name="option-${questionIdForName}-${i}" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Option ${i + 1}" value="${opt.text}" required />
         `;
         optionsContainer.appendChild(div);
       });
-    } else if (data.question_type === "direct-answer") {
-      mcOptions.classList.add("hidden");
-      textCorrectAnswer.classList.remove("hidden");
-      textCorrectAnswer.querySelector('input[name="correctAnswer"]').value = data.correct_answer || "";
+    } else if (data.question_type === "direct-answer" && data.correct_answer) {
+      textCorrectAnswer.querySelector('input[name="correctAnswer"]').value = data.correct_answer;
     }
 
     questionsContainer.appendChild(clone);
@@ -223,45 +243,51 @@
   }
 
   function toggleOptions(select) {
-    const mcOptions = select.closest(".question-block").querySelector('[name="mcOptions"]');
-    const textCorrectAnswer = select.closest(".question-block").querySelector('[name="textCorrectAnswer"]');
-    const radios = mcOptions.querySelectorAll('input[name="correctOption"]');
+    const block = select.closest(".question-block");
+    const mcOptions = block.querySelector('[name="mcOptions"]');
+    const textCorrectAnswer = block.querySelector('[name="textCorrectAnswer"]');
+    const radios = mcOptions ? mcOptions.querySelectorAll('input[name^="correctOption"]') : [];
 
     if (select.value === "multiple-choice") {
       mcOptions.classList.remove("hidden");
       textCorrectAnswer.classList.add("hidden");
-
-      // Add the `required` attribute to radio buttons
       radios.forEach((radio) => radio.setAttribute("required", "true"));
     } else if (select.value === "direct-answer") {
       mcOptions.classList.add("hidden");
       textCorrectAnswer.classList.remove("hidden");
-
-      // Remove the `required` attribute from radio buttons
+      radios.forEach((radio) => radio.removeAttribute("required"));
+    } else {
+      mcOptions.classList.add("hidden");
+      textCorrectAnswer.classList.add("hidden");
       radios.forEach((radio) => radio.removeAttribute("required"));
     }
   }
 
-  function renderQuestions() {
-    if (questions.length === 0) {
-      questionsList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 py-4">No questions added yet.</p>';
-      return;
+  questionsContainer.addEventListener('click', function(event) {
+    if (event.target.classList.contains('addOptionBtn')) {
+      const optionsContainer = event.target.closest('.mcOptions').querySelector('.optionsContainer');
+      const newOptionIndex = optionsContainer.children.length;
+      const questionBlock = event.target.closest('.question-block');
+      const questionIdForName = questionBlock.dataset.questionId || Date.now();
+
+      const newOptionDiv = document.createElement('div');
+      newOptionDiv.className = 'flex items-center gap-2';
+      newOptionDiv.innerHTML = `
+        <input type="radio" name="correctOption-${questionIdForName}" value="${newOptionIndex}" class="h-4 w-4 text-blue-600 focus:ring-blue-500" required />
+        <input type="text" name="option-${questionIdForName}-${newOptionIndex}" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Option ${newOptionIndex + 1}" required />
+      `;
+      optionsContainer.appendChild(newOptionDiv);
+    } else if (event.target.classList.contains('removeOptionBtn')) {
+      const optionsContainer = event.target.closest('.mcOptions').querySelector('.optionsContainer');
+      if (optionsContainer.children.length > 2) {
+        optionsContainer.removeChild(optionsContainer.lastElementChild);
+      } else {
+        alert("Vous devez avoir au moins deux options.");
+      }
     }
+  });
 
-    questionsList.innerHTML = questions.map((q, i) => `
-      <div class="mb-2 p-2 border dark:border-gray-600 rounded">
-        <p><strong>Q${i + 1}:</strong> ${q.question_text} (${q.points} pt)</p>
-        <p class="text-sm text-gray-500">${q.question_type}</p>
-        <p class="text-sm text-gray-500">Timer: ${q.timer} seconds</p>
-        ${q.mediaUrl ? `<img src="${q.mediaUrl}" alt="Question Media" class="mt-2 max-w-full h-auto">` : ""}
-      </div>
-    `).join('');
-  }
-
-  // Fetch the exam when page loads
   fetchExam();
 </script>
-
-
 </body>
 </html>

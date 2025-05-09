@@ -22,7 +22,8 @@ router.post("/upload_media", upload.single("media"), (req, res) => {
 
   // Save the file or process it as needed
   const mediaUrl = `/uploads/${req.file.filename}`;
-  res.json({ mediaUrl });
+  const mediaType = req.file.mimetype;
+  res.json({ mediaUrl, mediaType });
 });
 
 module.exports = router;
