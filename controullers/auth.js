@@ -216,9 +216,6 @@ exports.get_exam_by_id = (req, res) => {
 
   const sqlExam = "SELECT * FROM exams WHERE id = ?";
   const sqlQuestions = "SELECT * FROM questions WHERE exam_id = ?";
-  const sqlOptions = "SELECT * FROM options WHERE question_id IN (?)";
-  const sqlDirectAnswers =
-    "SELECT * FROM direct_answers WHERE question_id IN (?)";
 
   db.query(sqlExam, [examId], (err, examResults) => {
     if (err || examResults.length === 0) {
@@ -239,18 +236,27 @@ exports.get_exam_by_id = (req, res) => {
 
       const questionIds = questionResults.map((q) => q.id);
 
-      db.query(sqlOptions, [questionIds], (err, optionResults) => {
-        if (err) {
-          return res.status(500).json({ error: "Error fetching options" });
-        }
+      // Dynamically construct the query for options and direct answers
+      const sqlOptions = `SELECT * FROM options WHERE question_id IN (${questionIds.join(",")})`;
+      const sqlDirectAnswers = `SELECT * FROM direct_answers WHERE question_id IN (${questionIds.join(",")})`;
 
-        db.query(sqlDirectAnswers, [questionIds], (err, answerResults) => {
-          if (err) {
-            return res
-              .status(500)
-              .json({ error: "Error fetching direct answers" });
-          }
+      // Fetch options and direct answers in parallel
+      const fetchOptions = new Promise((resolve, reject) => {
+        db.query(sqlOptions, (err, optionResults) => {
+          if (err) return reject(err);
+          resolve(optionResults);
+        });
+      });
 
+      const fetchDirectAnswers = new Promise((resolve, reject) => {
+        db.query(sqlDirectAnswers, (err, answerResults) => {
+          if (err) return reject(err);
+          resolve(answerResults);
+        });
+      });
+
+      Promise.all([fetchOptions, fetchDirectAnswers])
+        .then(([optionResults, answerResults]) => {
           // Merge options and direct answers into questions
           const questionsWithDetails = questionResults.map((q) => {
             const options = optionResults.filter((o) => o.question_id === q.id);
@@ -258,21 +264,22 @@ exports.get_exam_by_id = (req, res) => {
 
             return {
               ...q,
-              options: options.length
-                ? options.map((o) => ({
-                    id: o.id,
-                    text: o.option_text,
-                    is_correct: !!o.is_correct,
-                  }))
-                : undefined,
-              correct_answer: answerObj ? answerObj.correct_answer : undefined,
+              options: options.map((o) => ({
+                id: o.id,
+                text: o.option_text,
+                is_correct: !!o.is_correct,
+              })),
+              correct_answer: answerObj ? answerObj.correct_answer : null,
             };
           });
 
           exam.questions = questionsWithDetails;
           res.json(exam);
+        })
+        .catch((err) => {
+          console.error("Error fetching options or direct answers:", err);
+          res.status(500).json({ error: "Error fetching question details" });
         });
-      });
     });
   });
 };
