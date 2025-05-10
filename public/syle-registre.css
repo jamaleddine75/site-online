@@ -206,3 +206,45 @@ body {
     margin-bottom: 10px;
   }
 }
+
+/* Alert styles */
+.alert {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  opacity: 0; /* Initially hidden */
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; /* Smooth fade-in and slide-in */
+  transform: translateY(-20px); /* Slide in from above */
+  background-color: #ff4d4d; /* Red background */
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  margin-bottom: 20px; /* Add spacing below the alert */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  position: relative;
+  max-width: 400px;
+  margin: 0 auto 20px; /* Center the alert above the title */
+}
+
+/* Show the alert */
+.alert.show {
+  opacity: 1;
+  transform: translateY(0); /* Slide into place */
+}
+
+/* Close button */
+.alert-close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+
+.alert-close-btn:hover {
+  color: #ffcccc; /* Lighter red on hover */
+}

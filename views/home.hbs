@@ -42,7 +42,17 @@
     </main>
   </div>
 
- 
+  <!-- Logout Confirmation Modal -->
+  <div id="logoutModal" class="modal">
+    <div class="modal-content">
+      <h3>Êtes-vous sûr de vouloir vous déconnecter ?</h3>
+      <div class="modal-actions">
+        <button id="confirmLogout" class="modal-btn confirm-btn">Oui</button>
+        <button id="cancelLogout" class="modal-btn cancel-btn">Non</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Get user name from localStorage
     const roleTitle = document.getElementById("name");
@@ -57,9 +67,24 @@
     });
 
     document.getElementById("logoutBtn").addEventListener("click", function() {
-      const confirmLogout = confirm("Êtes-vous sûr de vouloir vous déconnecter ?");
-      if (confirmLogout) {
-        window.location.href = "/logout"; // Redirect to the logout route
+      const logoutModal = document.getElementById("logoutModal");
+      logoutModal.style.display = "block"; // Show the modal
+    });
+
+    document.getElementById("confirmLogout").addEventListener("click", function() {
+      window.location.href = "/logout"; // Redirect to the logout route
+    });
+
+    document.getElementById("cancelLogout").addEventListener("click", function() {
+      const logoutModal = document.getElementById("logoutModal");
+      logoutModal.style.display = "none"; // Hide the modal
+    });
+
+    // Close the modal if the user clicks outside of it
+    window.addEventListener("click", function(event) {
+      const logoutModal = document.getElementById("logoutModal");
+      if (event.target === logoutModal) {
+        logoutModal.style.display = "none";
       }
     });
 

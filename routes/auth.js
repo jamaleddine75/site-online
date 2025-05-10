@@ -20,10 +20,24 @@ router.post("/upload_media", upload.single("media"), (req, res) => {
     return res.status(400).json({ error: "No file uploaded." });
   }
 
-  // Save the file or process it as needed
   const mediaUrl = `/uploads/${req.file.filename}`;
   const mediaType = req.file.mimetype;
   res.json({ mediaUrl, mediaType });
+});
+
+router.post('/save-coordinates', (req, res) => {
+
+  const { latitude, longitude } = req.body;
+
+  db.query('INSERT INTO geolocalisation_logs (latitude, longitude, timestamp) VALUES (?, ?, NOW())', 
+    [latitude, longitude],
+    (err, result) => {
+      if (err) {
+        console.error('Erreur d’enregistrement:', err);
+        return res.status(500).send('Erreur serveur');
+      }
+      res.send('Coordonnées enregistrées');
+  });
 });
 
 

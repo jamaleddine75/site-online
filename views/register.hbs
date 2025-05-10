@@ -8,6 +8,14 @@
   <link rel="stylesheet" href="/syle-registre.css" />
 </head>
 <body>
+  <!-- Message Block -->
+  {{#if message}}
+    <div class="alert alert-danger">
+      <span class="alert-message">{{message}}</span>
+      <button class="alert-close-btn">&times;</button>
+    </div>
+  {{/if}}
+
   <div class="hero-title-wrapper">
     <h1 class="hero-gradient-title">Bienvenue sur la plateforme</h1>
   </div>
@@ -49,18 +57,17 @@
       </div>
 
       <!-- Genre -->
-<div class="mb-4">
-  <label class="form-label d-block">Genre</label>
-  <div class="form-check form-check-inline">
-    <input class="form-check-input" type="radio" name="gender" id="male" value="male" required />
-    <label class="form-check-label" for="male">Homme</label>
-  </div>
-  <div class="form-check form-check-inline">
-    <input class="form-check-input" type="radio" name="gender" id="female" value="female" />
-    <label class="form-check-label" for="female">Femme</label>
-  </div>
-  
-</div>
+      <div class="mb-4">
+        <label class="form-label d-block">Genre</label>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="gender" id="male" value="male" required />
+          <label class="form-check-label" for="male">Homme</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="gender" id="female" value="female" />
+          <label class="form-check-label" for="female">Femme</label>
+        </div>
+      </div>
 
       <button type="submit" class="btn btn-primary w-100">S'inscrire</button>
     </form>
@@ -69,9 +76,26 @@
       Déjà un compte ? <a href="/">Se connecter</a>
     </p>
   </div>
-{{#if message}}
-    <h4 class ="aler aler-danger mt-4 ">{{message}}</h4>
-  {{/if}}
-  
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const alertMessage = document.querySelector(".alert");
+      if (alertMessage) {
+        // Show the alert with animation
+        alertMessage.classList.add("show");
+
+        // Automatically hide the alert after 5 seconds
+        setTimeout(() => {
+          alertMessage.classList.remove("show");
+        }, 5000);
+
+        // Add event listener to the close button
+        const closeButton = alertMessage.querySelector(".alert-close-btn");
+        closeButton.addEventListener("click", () => {
+          alertMessage.classList.remove("show");
+        });
+      }
+    });
+  </script>
 </body>
 </html>

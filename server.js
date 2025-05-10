@@ -32,6 +32,8 @@ app.set("view engine", "hbs");
 app.use("/", require("./routes/pages"));
 app.use("/auth", require("./routes/auth"));
 app.use(express.urlencoded({ extended: true }));
+app.use("/", require("./routes/geo")); 
+
 
 db.connect((err) => {
   if (err) {

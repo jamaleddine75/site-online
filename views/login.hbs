@@ -8,6 +8,15 @@
 </head>
 <body>
   <div class="container">
+    <!-- Message Block -->
+    {{#if message}}
+      <div class="alert alert-danger">
+        <span class="alert-message">{{message}}</span>
+        <button class="alert-close-btn">&times;</button>
+      </div>
+    {{/if}}
+
+    <!-- Login Form -->
     <div class="from-box" id="login-form">
       <form action="/auth/login" method="POST">
         <h2>Login</h2>
@@ -18,8 +27,26 @@
       </form>
     </div>
   </div>
-  {{#if message}}
-    <h4 class ="aler aler-danger mt-4 ">{{message}}</h4>
-  {{/if}}
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const alertMessage = document.querySelector(".alert");
+      if (alertMessage) {
+        // Show the alert with animation
+        alertMessage.classList.add("show");
+
+        // Automatically hide the alert after 5 seconds
+        setTimeout(() => {
+          alertMessage.classList.remove("show");
+        }, 5000);
+
+        // Add event listener to the close button
+        const closeButton = alertMessage.querySelector(".alert-close-btn");
+        closeButton.addEventListener("click", () => {
+          alertMessage.classList.remove("show");
+        });
+      }
+    });
+  </script>
 </body>
 </html>
