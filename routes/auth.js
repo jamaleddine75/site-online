@@ -26,4 +26,6 @@ router.post("/upload_media", upload.single("media"), (req, res) => {
   res.json({ mediaUrl, mediaType });
 });
 
+
+
 module.exports = router;

@@ -44,7 +44,12 @@ db.connect((err) => {
 app.use("/", require("./routes/pages"));
 app.use("/auth", require("./routes/auth"));
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static('uploads'));
+app.use("/uploads", express.static("uploads"));
+
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  next();
+});
 
 // Création examen avec lien unique
 app.post("/create-exam", (req, res) => {
@@ -66,7 +71,6 @@ app.post("/create-exam", (req, res) => {
 });
 
 // Accès à l’examen
-
 
 app.get("/auth/takeexam/:exam_id", (req, res) => {
   const examId = req.params.exam_id;

@@ -105,7 +105,6 @@ exports.login = async (req, res) => {
     }
   );
 };
-
 exports.create_exam = (req, res) => {
   const { title, description, timeLimit, questions } = req.body;
 
@@ -144,7 +143,16 @@ exports.create_exam = (req, res) => {
             // Insert question
             db.query(
               "INSERT INTO questions (exam_id, question_text, question_type, points, position,timer,mediaUrl,mediaType ) VALUES (?, ?, ?, ?, ?,?,?,?)",
-              [examId, q.question_text, q.question_type, q.points, q.position,q.timer, q.mediaUrl,q.mediaType],
+              [
+                examId,
+                q.question_text,
+                q.question_type,
+                q.points,
+                q.position,
+                q.timer,
+                q.mediaUrl,
+                q.mediaType,
+              ],
               (err, questionResult) => {
                 if (err) return reject(err);
 
@@ -237,8 +245,12 @@ exports.get_exam_by_id = (req, res) => {
       const questionIds = questionResults.map((q) => q.id);
 
       // Dynamically construct the query for options and direct answers
-      const sqlOptions = `SELECT * FROM options WHERE question_id IN (${questionIds.join(",")})`;
-      const sqlDirectAnswers = `SELECT * FROM direct_answers WHERE question_id IN (${questionIds.join(",")})`;
+      const sqlOptions = `SELECT * FROM options WHERE question_id IN (${questionIds.join(
+        ","
+      )})`;
+      const sqlDirectAnswers = `SELECT * FROM direct_answers WHERE question_id IN (${questionIds.join(
+        ","
+      )})`;
 
       // Fetch options and direct answers in parallel
       const fetchOptions = new Promise((resolve, reject) => {
@@ -312,86 +324,115 @@ exports.get_exams = (req, res) => {
   }
 };
 
-
-
 exports.update_exam = async (req, res) => {
   const { title, description, time_limit, questions } = req.body;
   const examId = req.params.id;
 
-  // Validation des données
+  // Validate input data
   if (!title || !time_limit || !questions) {
-    return res.status(400).json({ error: "Données manquantes" });
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
   if (!Array.isArray(questions)) {
-    return res.status(400).json({ error: "Les questions doivent être un tableau" });
+    return res.status(400).json({ error: "Questions must be an array" });
   }
 
   const token = req.cookies.jwt;
-  if (!token) return res.status(401).json({ error: "Non autorisé" });
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.id;
 
-    // UPDATE de l'exam
+    // Update the exam details
     db.query(
       "UPDATE exams SET title = ?, description = ?, time_limit = ? WHERE id = ? AND created_by = ?",
       [title, description, time_limit, examId, userId],
       (err) => {
-        if (err) return res.status(500).json({ error: "Erreur DB" });
+        if (err) return res.status(500).json({ error: "Database error" });
 
-        // Suppression des anciennes questions
-        db.query("DELETE FROM questions WHERE exam_id = ?", [examId], () => {
-          // Insertion des nouvelles questions
-          const inserts = questions.map((q) => {
-            return new Promise((resolve, reject) => {
-              db.query(
-                "INSERT INTO questions (exam_id, question_text, question_type, points, timer) VALUES (?, ?, ?, ?, ?)",
-                [examId, q.question_text, q.question_type, q.points, q.timer],
-                (err, result) => {
-                  if (err) return reject(err);
-
-                  const questionId = result.insertId;
-
-                  if (q.question_type === "multiple-choice" && q.options) {
-                    // Insertion des options
-                    const options = q.options.map(opt => {
-                      return new Promise((resOpt, rejOpt) => {
+        // Delete old questions, options, and direct answers
+        db.query(
+          "DELETE FROM options WHERE question_id IN (SELECT id FROM questions WHERE exam_id = ?)",
+          [examId],
+          () => {
+            db.query(
+              "DELETE FROM direct_answers WHERE question_id IN (SELECT id FROM questions WHERE exam_id = ?)",
+              [examId],
+              () => {
+                db.query(
+                  "DELETE FROM questions WHERE exam_id = ?",
+                  [examId],
+                  () => {
+                    // Insert new questions
+                    const inserts = questions.map((q) => {
+                      return new Promise((resolve, reject) => {
                         db.query(
-                          "INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)",
-                          [questionId, opt.text, opt.is_correct],
-                          (err) => err ? rejOpt(err) : resOpt()
+                          "INSERT INTO questions (exam_id, question_text, question_type, points, timer, mediaUrl, mediaType) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                          [
+                            examId,
+                            q.question_text,
+                            q.question_type,
+                            q.points,
+                            q.timer,
+                            q.mediaUrl || null,
+                            q.mediaType || null,
+                          ],
+                          (err, result) => {
+                            if (err) return reject(err);
+
+                            const questionId = result.insertId;
+
+                            if (
+                              q.question_type === "multiple-choice" &&
+                              q.options
+                            ) {
+                              // Insert options for multiple-choice questions
+                              const options = q.options.map((opt) => {
+                                return new Promise((resOpt, rejOpt) => {
+                                  db.query(
+                                    "INSERT INTO options (question_id, option_text, is_correct) VALUES (?, ?, ?)",
+                                    [questionId, opt.text, opt.is_correct],
+                                    (err) => (err ? rejOpt(err) : resOpt())
+                                  );
+                                });
+                              });
+                              Promise.all(options).then(resolve).catch(reject);
+                            } else if (
+                              q.question_type === "direct-answer" &&
+                              q.correct_answer
+                            ) {
+                              // Insert direct answer for direct-answer questions
+                              db.query(
+                                "INSERT INTO direct_answers (question_id, correct_answer) VALUES (?, ?)",
+                                [questionId, q.correct_answer],
+                                (err) => (err ? reject(err) : resolve())
+                              );
+                            } else {
+                              resolve();
+                            }
+                          }
                         );
                       });
                     });
-                    Promise.all(options).then(resolve).catch(reject);
-                  } else if (q.question_type === "direct-answer" && q.correct_answer) {
-                    // Insertion de la réponse directe
-                    db.query(
-                      "INSERT INTO direct_answers (question_id, correct_answer) VALUES (?, ?)",
-                      [questionId, q.correct_answer],
-                      (err) => err ? reject(err) : resolve()
-                    );
-                  } else {
-                    resolve();
-                  }
-                }
-              );
-            });
-          });
 
-          Promise.all(inserts)
-            .then(() => res.json({ success: true }))
-            .catch(err => res.status(500).json({ error: err.message }));
-        });
+                    Promise.all(inserts)
+                      .then(() => res.json({ success: true }))
+                      .catch((err) =>
+                        res.status(500).json({ error: err.message })
+                      );
+                  }
+                );
+              }
+            );
+          }
+        );
       }
     );
   } catch (err) {
-    res.status(401).json({ error: "Token invalide" });
+    res.status(401).json({ error: "Invalid token" });
   }
 };
-
 
 exports.delete_exam = (req, res) => {
   const examId = req.params.id;

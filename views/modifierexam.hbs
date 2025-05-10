@@ -43,48 +43,53 @@
   </div>
 
   <template id="questionTemplate">
-    <div class="border border-gray-700 p-4 rounded-md bg-gray-800 space-y-4 question-block">
-      <div>
-        <label class="block text-sm font-medium">Question</label>
-        <input type="text" name="questionText" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" required />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium">Points</label>
-        <input type="number" name="points" min="1" value="10" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" placeholder="Points" required />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium">Timer (seconds)</label>
-        <input type="number" name="timer" min="30" value="30" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" placeholder="Timer (seconds)" required />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium">Type</label>
-        <select name="questionType" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" onchange="toggleOptions(this)" required>
-          <option value="direct-answer">Réponse directe</option>
-          <option value="multiple-choice">Choix multiple</option>
-        </select>
-      </div>
-
-      <div name="textCorrectAnswer" class="space-y-2 hidden">
-        <label class="block text-sm font-medium">Réponse correcte</label>
-        <input type="text" name="correctAnswer" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Entrez la réponse correcte" />
-      </div>
-
-      <div name="mcOptions" class="space-y-2 hidden">
-        <label class="block text-sm font-medium">Options (mark correct answer)</label>
-        <div class="space-y-2 optionsContainer">
-          </div>
-        <div class="flex gap-2 mt-2">
-          <button type="button" class="bg-blue-600 text-white px-2 py-1 rounded-md text-sm hover:bg-blue-700 addOptionBtn">Ajouter une option</button>
-          <button type="button" class="bg-red-600 text-white px-2 py-1 rounded-md text-sm hover:bg-red-700 removeOptionBtn">Supprimer une option</button>
-        </div>
-      </div>
-
-      <button type="button" onclick="removeQuestion(this)" class="bg-red-700 hover:bg-red-800 px-2 py-1 text-sm rounded-md text-white">Supprimer cette question</button>
+  <div class="border border-gray-700 p-4 rounded-md bg-gray-800 space-y-4 question-block">
+    <div>
+      <label class="block text-sm font-medium">Add Media (image, audio, video)</label>
+      <input type="file" name="media" accept="image/*,audio/*,video/*" class="mt-1 block w-full text-white" />
+      <div class="media-preview mt-2"></div>
     </div>
-  </template>
+
+    <div>
+      <label class="block text-sm font-medium">Question</label>
+      <input type="text" name="questionText" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" required />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium">Points</label>
+      <input type="number" name="points" min="1" value="10" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" placeholder="Points" required />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium">Timer (seconds)</label>
+      <input type="number" name="timer" min="30" value="30" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" placeholder="Timer (seconds)" required />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium">Type</label>
+      <select name="questionType" class="w-full mt-1 p-2 rounded-md bg-gray-700 border border-gray-600 text-white" onchange="toggleOptions(this)" required>
+        <option value="direct-answer">Direct Answer</option>
+        <option value="multiple-choice">Multiple Choice</option>
+      </select>
+    </div>
+
+    <div name="textCorrectAnswer" class="space-y-2 hidden">
+      <label class="block text-sm font-medium">Correct Answer</label>
+      <input type="text" name="correctAnswer" class="block w-full rounded-md border-gray-300 shadow-sm p-2 text-black" placeholder="Enter the correct answer" />
+    </div>
+
+    <div name="mcOptions" class="space-y-2 hidden">
+      <label class="block text-sm font-medium">Options (mark correct answer)</label>
+      <div class="space-y-2 optionsContainer"></div>
+      <div class="flex gap-2 mt-2">
+        <button type="button" class="bg-blue-600 text-white px-2 py-1 rounded-md text-sm hover:bg-blue-700 addOptionBtn">Add Option</button>
+        <button type="button" class="bg-red-600 text-white px-2 py-1 rounded-md text-sm hover:bg-red-700 removeOptionBtn">Remove Option</button>
+      </div>
+    </div>
+
+    <button type="button" onclick="removeQuestion(this)" class="bg-red-700 hover:bg-red-800 px-2 py-1 text-sm rounded-md text-white">Remove Question</button>
+  </div>
+</template>
 
 <script>
   const examId = "{{examId}}";
@@ -98,9 +103,7 @@
     const time_limit = parseInt(document.getElementById("time_limit").value);
 
     const questionBlocks = document.querySelectorAll(".question-block");
-    console.log("Number of question blocks found:", questionBlocks.length);
-
-    const questionsData = [...questionBlocks].map((block) => {
+    const questionsData = await Promise.all([...questionBlocks].map(async (block) => {
       const questionInput = block.querySelector('input[name="questionText"]');
       const text = questionInput ? questionInput.value.trim() : null;
       const type = block.querySelector('select[name="questionType"]').value;
@@ -111,6 +114,34 @@
       if (!text || !type) {
         alert("Please fill in all required fields for each question.");
         throw new Error("Validation failed: Missing required fields.");
+      }
+
+      const mediaInput = block.querySelector('input[name="media"]');
+      let mediaUrl = null;
+      let mediaType = null;
+
+      if (mediaInput && mediaInput.files.length > 0) {
+        const formData = new FormData();
+        formData.append("media", mediaInput.files[0]);
+
+        try {
+          const uploadResponse = await fetch("/auth/upload_media", {
+            method: "POST",
+            body: formData,
+          });
+
+          const uploadData = await uploadResponse.json();
+          if (!uploadResponse.ok) {
+            alert(uploadData.error || "Error uploading media.");
+            throw new Error("Media upload failed.");
+          }
+
+          mediaUrl = uploadData.mediaUrl;
+          mediaType = uploadData.mediaType;
+        } catch (err) {
+          console.error("Error uploading media:", err);
+          throw new Error("Media upload failed.");
+        }
       }
 
       if (type === "multiple-choice") {
@@ -128,7 +159,7 @@
           return { text: optionText, is_correct: isCorrect, id: optionId };
         });
 
-        return { question_text: text, question_type: type, timer: timer, points: points, options: options, id: questionId };
+        return { question_text: text, question_type: type, timer, points, options, id: questionId, mediaUrl, mediaType };
       } else if (type === "direct-answer") {
         const correctAnswerInput = block.querySelector('input[name="correctAnswer"]');
         const correct_answer = correctAnswerInput ? correctAnswerInput.value.trim() : null;
@@ -138,32 +169,25 @@
           throw new Error("Validation failed: Missing correct answer.");
         }
 
-        return { question_text: text, question_type: type, points: points, timer: timer, correct_answer: correct_answer, id: questionId };
+        return { question_text: text, question_type: type, points, timer, correct_answer, id: questionId, mediaUrl, mediaType };
       }
 
       return null;
-    }).filter(q => q !== null);
+    }));
 
-    console.log("Data being sent:", {
-      title,
-      description,
-      time_limit,
-      questions: questionsData
-    });
-    console.log("📤 Full data being sent to backend:");
-    console.log(JSON.stringify({ title, description, time_limit, questions: questionsData }, null, 2));
+    console.log("Data being sent:", { title, description, time_limit, questions: questionsData });
 
     await fetch(`/auth/exams/${examId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description, time_limit, questions: questionsData })
+      body: JSON.stringify({ title, description, time_limit, questions: questionsData }),
     }).then(async (response) => {
       if (!response.ok) {
         const error = await response.json();
         console.error("Error response from server:", error);
         alert(error.error || "Failed to update exam.");
       } else {
-        alert("Examen modifié !");
+        alert("Exam updated successfully!");
       }
     }).catch((err) => {
       console.error("Network error:", err);
@@ -211,6 +235,16 @@
     const mcOptions = block.querySelector('[name="mcOptions"]');
     const textCorrectAnswer = block.querySelector('[name="textCorrectAnswer"]');
     const optionsContainer = block.querySelector('.optionsContainer');
+    const mediaInput = block.querySelector('input[name="media"]');
+    const mediaPreview = block.querySelector('.media-preview');
+
+    // Display existing media if available
+    if (data.mediaUrl) {
+      mediaPreview.innerHTML = `
+        <p class="text-sm text-gray-400">Existing Media:</p>
+        <a href="${data.mediaUrl}" target="_blank" class="underline text-blue-400">View Media</a>
+      `;
+    }
 
     if (data.question_text) questionInput.value = data.question_text;
     if (data.question_type) {
@@ -254,6 +288,13 @@
       mcOptions.classList.remove("hidden");
       textCorrectAnswer.classList.add("hidden");
 
+      // Add the required attribute to multiple-choice inputs
+      const optionInputs = optionsContainer.querySelectorAll('input[type="text"]');
+      optionInputs.forEach((input) => input.setAttribute("required", "true"));
+
+      const radioInputs = optionsContainer.querySelectorAll('input[type="radio"]');
+      radioInputs.forEach((input) => input.setAttribute("required", "true"));
+
       // Add two default options only if none exist
       if (optionsContainer.children.length === 0) {
         for (let i = 0; i < 2; i++) {
@@ -269,9 +310,26 @@
     } else if (select.value === "direct-answer") {
       mcOptions.classList.add("hidden");
       textCorrectAnswer.classList.remove("hidden");
+
+      // Remove the required attribute from multiple-choice inputs
+      const optionInputs = optionsContainer.querySelectorAll('input[type="text"]');
+      optionInputs.forEach((input) => input.removeAttribute("required"));
+
+      const radioInputs = optionsContainer.querySelectorAll('input[type="radio"]');
+      radioInputs.forEach((input) => input.removeAttribute("required"));
+
+      // Add the required attribute to the direct-answer input
+      const correctAnswerInput = textCorrectAnswer.querySelector('input[name="correctAnswer"]');
+      if (correctAnswerInput) {
+        correctAnswerInput.setAttribute("required", "true");
+      }
     } else {
       mcOptions.classList.add("hidden");
       textCorrectAnswer.classList.add("hidden");
+
+      // Remove the required attribute from all inputs
+      const allInputs = block.querySelectorAll('input');
+      allInputs.forEach((input) => input.removeAttribute("required"));
     }
   }
 

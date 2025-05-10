@@ -19,6 +19,7 @@
           <li><span>📈</span>Passer les examens</li>
         </ul>
       </nav>
+      <button id="logoutBtn" class="logout-btn">Se déconnecter</button> 
     </aside>
 
     <main class="main-content">
@@ -53,6 +54,13 @@
 
     document.getElementById("passExamCard").addEventListener("click", function() {
       window.location.href = "/lien";
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", function() {
+      const confirmLogout = confirm("Êtes-vous sûr de vouloir vous déconnecter ?");
+      if (confirmLogout) {
+        window.location.href = "/logout"; // Redirect to the logout route
+      }
     });
 
     // Function to load user's exams

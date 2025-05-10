@@ -41,6 +41,16 @@ router.get("/lien", (req, res) => {
   res.render("lien");
 });
 
+router.get("/logout", (req, res) => {
+  if (req.session) {
+    req.session.destroy(() => {
+      res.render("login"); // Redirect to the login page after logout
+    });
+  } else {
+    res.render("login"); // Redirect even if session is not defined
+  }
+});
+
 router.get("/create_exam", (req, res) => {
   res.render("create_exam");
 });
