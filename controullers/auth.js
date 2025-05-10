@@ -309,7 +309,7 @@ exports.get_exams = (req, res) => {
 
 exports.update_exam = async (req, res) => {
   const { title, description, time_limit, questions } = req.body;
-  const examId = req.params.examId;
+  const examId = req.params.id;
 
   // Validation des données
   if (!title || !time_limit || !questions) {

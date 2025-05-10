@@ -266,7 +266,7 @@
 
   questionsContainer.addEventListener('click', function(event) {
     if (event.target.classList.contains('addOptionBtn')) {
-      const optionsContainer = event.target.closest('.mcOptions').querySelector('.optionsContainer');
+      const optionsContainer = event.target.closest('[name="mcOptions"]').querySelector('.optionsContainer');
       const newOptionIndex = optionsContainer.children.length;
       const questionBlock = event.target.closest('.question-block');
       const questionIdForName = questionBlock.dataset.questionId || Date.now();
@@ -279,7 +279,7 @@
       `;
       optionsContainer.appendChild(newOptionDiv);
     } else if (event.target.classList.contains('removeOptionBtn')) {
-      const optionsContainer = event.target.closest('.mcOptions').querySelector('.optionsContainer');
+      const optionsContainer = event.target.closest('[name="mcOptions"]').querySelector('.optionsContainer');
       if (optionsContainer.children.length > 2) {
         optionsContainer.removeChild(optionsContainer.lastElementChild);
       } else {
